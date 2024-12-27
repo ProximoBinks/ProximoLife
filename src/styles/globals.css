@@ -121,3 +121,19 @@
 .draggable p {
   font-family: SF Pro Display, sans-serif;
 }
+
+.window {
+  position: absolute;
+  width: 400px;     /* Adjust as needed */
+  border: 1px solid #ccc;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.window .window-content {
+  height: 200px;    /* Example height */
+  overflow-y: auto; /* Scroll if content overflows */
+}
+
+.hidden {
+  display: none;
+}

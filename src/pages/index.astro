@@ -2,122 +2,129 @@
 import Layout from "../components/Layout.astro";
 ---
 
-<Layout title="Mac-Like Drag and Drop">
+<Layout title="proximo | Home">
   <div class="desktop bg-white w-full h-screen relative overflow-hidden select-none">
-    <!-- Draggable Items -->
-    <div id="folder" class="draggable" style="right: 50px; top: 50px;">
+
+    <!-- TEAM Folder Icon: Double-click to open a Finder-like window -->
+    <div id="folderIcon" class="draggable" style="right:50px; top:50px;">
       <img src="/images/Folder.png" alt="Folder" class="icon" draggable="false"/>
       <p class="mt-1 text-center text-[12px] font-[600]">Folder</p>
     </div>
-    <div id="finder" class="draggable" style="right: 150px; top: 225px;">
+    
+    <!-- The Finder-like “TEAM Window” (hidden by default) -->
+    <div id="teamWindow" class="window hidden" style="left:200px; top:100px;">
+      <!-- Title bar to drag the window around -->
+      <div class="title-bar flex justify-between items-center p-2 bg-gray-200 cursor-grab">
+        <span>TEAM</span>
+        <button id="closeTeamWindow" class="px-2 py-1 bg-red-500 text-white">X</button>
+      </div>
+      
+      <!-- Window content area -->
+      <div class="window-content p-4 bg-white">
+        <p>chlo.jpg</p>
+        <p>fuz.jpg</p>
+        <p>joe.jpg</p>
+        <p>v.jpeg</p>
+      </div>
+    </div>
+
+    <!-- YOUR OTHER ICONS (Finder, Trash, Blog Folder, etc.) -->
+    <div id="finder" class="draggable" style="right:150px; top:225px;">
       <img src="/images/Finder.png" alt="Finder" class="icon" draggable="false"/>
       <p class="mt-1 text-center text-[12px] font-[600]">Finder</p>
     </div>
-    <div id="trash" class="draggable" style="right: 150px; top: 335px;">
+    <div id="trash" class="draggable" style="right:150px; top:335px;">
       <img src="/images/Trash.png" alt="Trash" class="icon" draggable="false"/>
     </div>
-    <div id="folder" class="draggable" style="right: 50px; top: 150px;">
+    <div id="folderBlog" class="draggable" style="right:50px; top:150px;">
       <img src="/images/DeveloperFolder.png" alt="Folder" class="icon" draggable="false"/>
       <p class="mt-1 text-center text-[12px] font-[600]">Blog</p>
     </div>
   </div>
 
   <script>
-    // Higher z-index means "on top"
+    // Keep track of the highest z-index so the last clicked item is "on top"
     let highestZIndex = 10;
-
-    // A small movement threshold (in px) to distinguish a "click" from a "drag"
     const DRAG_THRESHOLD = 3;
-
     const desktop = document.querySelector(".desktop");
-    const draggables = document.querySelectorAll(".draggable");
 
-    // Helper to clamp value between min and max
-    function clamp(value, min, max) {
-      return Math.min(Math.max(value, min), max);
-    }
+    // Make each icon and window draggable using your existing logic
+    const allDraggables = document.querySelectorAll(".draggable");
+    allDraggables.forEach((item) => makeDraggable(item));
 
-    draggables.forEach((draggable) => {
-      // Track offset between pointer position and the top-left corner of the element
+    // Access the TEAM window and make it draggable by its title bar
+    const teamWindow = document.getElementById("teamWindow");
+    const titleBar = teamWindow.querySelector(".title-bar");
+    makeDraggable(teamWindow, titleBar);
+
+    // Show TEAM window on double-click
+    const folderIcon = document.getElementById("folderIcon");
+    folderIcon.addEventListener("dblclick", () => {
+      teamWindow.classList.remove("hidden");
+      // Bring it to top
+      teamWindow.style.zIndex = ++highestZIndex;
+    });
+
+    // Close the window
+    document.getElementById("closeTeamWindow").addEventListener("click", () => {
+      teamWindow.classList.add("hidden");
+    });
+
+    /**
+     * Make an element draggable. If handleElement is provided, only that sub‐element
+     * (e.g., the title bar) initiates the drag. Otherwise the entire element is draggable.
+     */
+    function makeDraggable(draggable, handleElement) {
       let offsetX = 0;
       let offsetY = 0;
-
-      // Track initial pointer-down coordinates to detect small moves vs real drags
       let startX = 0;
       let startY = 0;
-
-      // Flag to indicate when an actual drag is happening
       let isDragging = false;
+      const handle = handleElement || draggable;
 
-      const pointerDownHandler = (event) => {
-        // Bring this element to the top
+      handle.addEventListener("pointerdown", pointerDownHandler);
+
+      function pointerDownHandler(e) {
         draggable.style.zIndex = ++highestZIndex;
+        startX = e.clientX;
+        startY = e.clientY;
 
-        // Record the initial pointer position
-        startX = event.clientX;
-        startY = event.clientY;
-
-        // Calculate the offset from element's position
         const rect = draggable.getBoundingClientRect();
-        offsetX = event.clientX - rect.left;
-        offsetY = event.clientY - rect.top;
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        isDragging = false;
 
-        isDragging = false; // reset drag flag
-
-        // Listen for pointer move/up on the entire document
         document.addEventListener("pointermove", pointerMoveHandler);
         document.addEventListener("pointerup", pointerUpHandler);
-      };
+      }
 
-      const pointerMoveHandler = (event) => {
-        // Check how far we've moved from the initial pointer-down
-        const deltaX = event.clientX - startX;
-        const deltaY = event.clientY - startY;
-
-        // If the movement exceeds threshold, we're dragging
-        if (
-          !isDragging &&
-          (Math.abs(deltaX) > DRAG_THRESHOLD ||
-            Math.abs(deltaY) > DRAG_THRESHOLD)
-        ) {
+      function pointerMoveHandler(e) {
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        if (!isDragging && (Math.abs(deltaX) > DRAG_THRESHOLD || Math.abs(deltaY) > DRAG_THRESHOLD)) {
           isDragging = true;
         }
-
         if (isDragging) {
-          event.preventDefault(); // prevent text selection during drag
-
-          // Get bounding rect of desktop to clamp movement
+          e.preventDefault();
           const desktopRect = desktop.getBoundingClientRect();
           const draggableRect = draggable.getBoundingClientRect();
 
-          // Calculate the new position
-          let newLeft = event.clientX - offsetX - desktopRect.left;
-          let newTop = event.clientY - offsetY - desktopRect.top;
+          let newLeft = e.clientX - offsetX - desktopRect.left;
+          let newTop = e.clientY - offsetY - desktopRect.top;
 
-          // Clamp so the draggable doesn't leave the desktop
-          newLeft = clamp(newLeft, 0, desktopRect.width - draggableRect.width);
-          newTop = clamp(newTop, 0, desktopRect.height - draggableRect.height);
+          // (Optional) Clamping to keep within desktop
+          newLeft = Math.min(Math.max(newLeft, 0), desktopRect.width - draggableRect.width);
+          newTop = Math.min(Math.max(newTop, 0), desktopRect.height - draggableRect.height);
 
-          // Apply the new position
           draggable.style.left = `${newLeft}px`;
           draggable.style.top = `${newTop}px`;
         }
-      };
+      }
 
-      const pointerUpHandler = () => {
-        // Cleanup
+      function pointerUpHandler() {
         document.removeEventListener("pointermove", pointerMoveHandler);
         document.removeEventListener("pointerup", pointerUpHandler);
-
-        // If we never exceeded the drag threshold, this was just a click
-        if (!isDragging) {
-          // You can handle “clicked” behavior here if desired
-          // e.g., open the folder, show alert, etc.
-        }
-      };
-
-      // Attach event listener for pointer down
-      draggable.addEventListener("pointerdown", pointerDownHandler);
-    });
+      }
+    }
   </script>
 </Layout>
