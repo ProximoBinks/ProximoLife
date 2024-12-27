@@ -1,0 +1,29 @@
+---
+import Layout from "../../components/Layout.astro";
+import Post from "../../components/Post.astro";
+import { supabase } from "../../utils/database";
+
+let posts = [];
+let error = null;
+
+// Fetch posts from Supabase
+if (supabase) {
+  const { data, error: fetchError } = await supabase
+    .from("posts")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  posts = data || [];
+  error = fetchError;
+}
+---
+
+<Layout title="Blog">
+  <h1 class="mb-8 text-4xl font-bold">Welcome to the Blog</h1>
+
+  {error ? (
+    <p class="text-red-500">Error fetching posts: {error.message}</p>
+  ) : (
+    posts.map((post) => <Post post={post} />)
+  )}
+</Layout>

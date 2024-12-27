@@ -1,0 +1,19 @@
+---
+interface Props {
+  post: {
+    id: string;
+    title: string;
+    content: string;
+    created_at: string;
+    author: string;
+  };
+}
+
+const { post } = Astro.props;
+---
+
+<article class="p-8 border rounded border-neutral-600 mb-6">
+  <h2 class="text-2xl font-bold">{post.title}</h2>
+  <p class="text-sm text-gray-400">By {post.author} on {new Date(post.created_at).toLocaleDateString()}</p>
+  <div class="prose prose-neutral mt-4">{post.content}</div>
+</article>

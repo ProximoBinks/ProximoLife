@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
+/* @layer base {
   a {
     @apply hover:underline hover:underline-offset-2 hover:decoration-green-500;
   }
@@ -15,4 +15,109 @@
   img {
     @apply border rounded border-neutral-500;
   }
+} */
+
+@font-face {
+  font-family: "Digital-7";
+  src: url("/fonts/digital-7.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Gliker-Bold";
+  src: url("/fonts/gliker-bold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Block";
+  src: url("/fonts/block.ttf") format("truetype");
+}
+
+#adelaide-time {
+  font-family: "Block";
+}
+
+.desktop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  background-color: #ffffff;
+  position: relative;
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  display: block;
+  margin: 0 auto;
+}
+
+.draggable {
+  position: absolute;
+  cursor: grab;
+  width: 100px;
+  text-align: center;
+}
+
+.draggable:active {
+  cursor: grabbing;
+}
+
+@font-face {
+  font-family: "SF Pro Display";
+  src: url("https://cdn.fontcdn.ir/Fonts/SFProDisplay/5e4509d3e53b2e3faf7874bf6078aaf0d86ba9d6a8ec3079cc872b7b1d4b338b.woff2") format("woff2");
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: "SF Pro Display";
+  src: url("https://cdn.fontcdn.ir/Fonts/SFProDisplay/9750654d035b4d4d577ab1db20918077ad19a76bba8a65e6e690802912c3d82f.woff2") format("woff2");
+  font-weight: 200;
+  font-style: normal;
+}
+@font-face {
+  font-family: "SF Pro Display";
+  src: url("https://cdn.fontcdn.ir/Fonts/SFProDisplay/104802c6c6dc7a3d84d629a79b78046847a9cc8caac8f73ea07e2dddfb5e31ce.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: "SF Pro Display";
+  src: url("https://cdn.fontcdn.ir/Fonts/SFProDisplay/5bc1142d5fc993d2ec21a8fa93a17718818e8172dffc649b7d8a3ab459cfbf9c.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "SF Pro Display";
+  src: url("https://cdn.fontcdn.ir/Fonts/SFProDisplay/b8da67821e588e3ee5516083d99f1d9907c23a24fcb52dfb3c57cd38924dcef7.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: "SF Pro Display";
+  src: url("https://cdn.fontcdn.ir/Fonts/SFProDisplay/e80a61b2cbc6d6b3b3ed8b50bcd8f6a89f8f5b69460e03f47defe0554c3220d2.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: "SF Pro Display";
+  src: url("https://cdn.fontcdn.ir/Fonts/SFProDisplay/32b6db04338d853de4148e775afcacadfb2d0bd3e8f10192916f6688f34c6005.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "SF Pro Display";
+  src: url("https://cdn.fontcdn.ir/Fonts/SFProDisplay/9c8773b18df092674df6b952c940fdc72cb66c5b6f408851e66866e72743df56.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: "SF Pro Display";
+  src: url("https://cdn.fontcdn.ir/Fonts/SFProDisplay/7c60d03415a0dafaba510d4fe6a06ff74a049450351dc9ed1a305d0f9bff90e3.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+}
+
+/* Optional: Apply specific styles to folder text */
+.draggable p {
+  font-family: SF Pro Display, sans-serif;
 }

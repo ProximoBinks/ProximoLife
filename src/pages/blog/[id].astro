@@ -1,0 +1,31 @@
+---
+import Layout from "../../components/Layout.astro";
+import { supabase } from "../../utils/database";
+
+const { id } = Astro.params;
+let post = null;
+let error = null;
+
+if (supabase) {
+  const { data, error: fetchError } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  post = data;
+  error = fetchError;
+}
+---
+
+<Layout title={post ? post.title : "Post Not Found"}>
+  {error || !post ? (
+    <p class="text-red-500">Error loading post: {error?.message || "Not found"}</p>
+  ) : (
+    <article class="p-8 border rounded border-neutral-600">
+      <h1 class="text-3xl font-bold mb-4">{post.title}</h1>
+      <p class="text-sm text-gray-400">By {post.author} on {new Date(post.created_at).toLocaleDateString()}</p>
+      <div class="prose prose-neutral mt-6">{post.content}</div>
+    </article>
+  )}
+</Layout>

@@ -1,9 +1,57 @@
-<header class="max-w-4xl mx-auto mt-6 mb-16">
-  <nav class="flex justify-between">
-    <a
-      href="/"
-      class="text-2xl font-bold hover:underline hover:underline-offset-4 hover:decoration-green-500"
-      ><span class="text-green-500">&#10022;</span> Astro Supabase Starter
+---
+function getAdelaideTime() {
+  const adelaideTime = new Date().toLocaleTimeString("en-AU", {
+    timeZone: "Australia/Adelaide",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  return `${adelaideTime}`;
+}
+---
+
+<header
+  class="max-w-7xl mx-auto mb-16 flex items-center justify-between relative"
+>
+  <!-- Left: Adelaide Time -->
+  <div
+    id="adelaide-time"
+    class="absolute left-0 bg-black text-white py-1 px-2 text-3xl font-bold"
+  >
+    {getAdelaideTime()}
+  </div>
+
+  <!-- Center: GIF -->
+  <div class="flex justify-center w-full">
+    <a href="/">
+      <img
+        src="/images/nav.gif"
+        alt="Navigation GIF"
+        class="h-[200px] w-[200px]"
+      />
     </a>
-  </nav>
+  </div>
+
+  <!-- Right: Proximo Text -->
+  <div class="absolute right-0 text-3xl font-bold text-[#5b5bf3]">proximo</div>
+
+  <script>
+    // Update the time dynamically
+    const updateTime = () => {
+      const timeElement = document.getElementById("adelaide-time");
+      if (timeElement) {
+        const adelaideTime = new Date().toLocaleTimeString("en-AU", {
+          timeZone: "Australia/Adelaide",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        });
+        timeElement.textContent = `${adelaideTime}`;
+      }
+    };
+
+    setInterval(updateTime, 1000);
+  </script>
 </header>

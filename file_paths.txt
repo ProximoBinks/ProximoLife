@@ -1,0 +1,15 @@
+/Users/proximo/Documents/GitHub/ProximoLife/src/env.d.ts
+/Users/proximo/Documents/GitHub/ProximoLife/src/content/config.ts
+/Users/proximo/Documents/GitHub/ProximoLife/src/content/guides/guide-connect-supabase.md
+/Users/proximo/Documents/GitHub/ProximoLife/src/content/guides/guide-fetch-data.md
+/Users/proximo/Documents/GitHub/ProximoLife/src/utils/database.ts
+/Users/proximo/Documents/GitHub/ProximoLife/src/styles/globals.css
+/Users/proximo/Documents/GitHub/ProximoLife/src/components/Guide.astro
+/Users/proximo/Documents/GitHub/ProximoLife/src/components/TableRow.astro
+/Users/proximo/Documents/GitHub/ProximoLife/src/components/Footer.astro
+/Users/proximo/Documents/GitHub/ProximoLife/src/components/Alert.astro
+/Users/proximo/Documents/GitHub/ProximoLife/src/components/Layout.astro
+/Users/proximo/Documents/GitHub/ProximoLife/src/components/Header.astro
+/Users/proximo/Documents/GitHub/ProximoLife/src/pages/index.astro
+/Users/proximo/Documents/GitHub/ProximoLife/src/pages/api/frameworks/[id]/like.ts
+/Users/proximo/Documents/GitHub/ProximoLife/src/pages/frameworks/[id].astro

@@ -1,71 +1,123 @@
 ---
-import { getEntry } from "astro:content";
-import Alert from "../components/Alert.astro";
-import Guide from "../components/Guide.astro";
 import Layout from "../components/Layout.astro";
-import TableRow from "../components/TableRow.astro";
-import { supabase } from "../utils/database";
-
-export const prerender = false;
-
-let frameworks;
-let frameworksError;
-
-// Fetch frameworks data from Supabase if connection is set up
-if (supabase) {
-  const { data, error } = await supabase
-    .from("frameworks")
-    .select("*")
-    .order("likes", { ascending: false });
-  frameworks = data;
-  frameworksError = error;
-}
-
-// Get guides
-const connectGuide = await getEntry("guides", "guide-connect-supabase");
-const fetchDataGuide = await getEntry("guides", "guide-fetch-data");
 ---
 
-<Layout title="Web Frameworks">
-  {
-    supabase ? (
-      frameworks ? (
-        <>
-          <h1 class="mb-8 text-4xl font-bold">
-            Vote for Your Favorite Web Framework
-          </h1>
-          <table class="w-full text-left">
-            <thead>
-              <tr class="font-mono text-base border-t border-b">
-                <th>Name</th>
-                <th>Logo</th>
-                <th>Likes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {frameworks?.map((framework) => (
-                <TableRow framework={framework} />
-              ))}
-            </tbody>
-          </table>
-        </>
-      ) : (
-        <>
-          {frameworksError && (
-            <Alert
-              title={frameworksError.code}
-              text={frameworksError.message}
-              variant="error"
-            />
-          )}
-          {fetchDataGuide && <Guide guide={fetchDataGuide} />}
-        </>
-      )
-    ) : (
-      <>
-        <Alert title="Finish setting up your new site" text="Before your website is ready, you must complete the steps from the guide below to create, populate, and connect your Supabase database."/>
-        {connectGuide && <Guide guide={connectGuide} />}
-      </>
-    )
-  }
+<Layout title="Mac-Like Drag and Drop">
+  <div class="desktop bg-white w-full h-screen relative overflow-hidden select-none">
+    <!-- Draggable Items -->
+    <div id="folder" class="draggable" style="right: 50px; top: 50px;">
+      <img src="/images/Folder.png" alt="Folder" class="icon" draggable="false"/>
+      <p class="mt-1 text-center text-[12px] font-[600]">Folder</p>
+    </div>
+    <div id="finder" class="draggable" style="right: 150px; top: 225px;">
+      <img src="/images/Finder.png" alt="Finder" class="icon" draggable="false"/>
+      <p class="mt-1 text-center text-[12px] font-[600]">Finder</p>
+    </div>
+    <div id="trash" class="draggable" style="right: 150px; top: 335px;">
+      <img src="/images/Trash.png" alt="Trash" class="icon" draggable="false"/>
+    </div>
+    <div id="folder" class="draggable" style="right: 50px; top: 150px;">
+      <img src="/images/DeveloperFolder.png" alt="Folder" class="icon" draggable="false"/>
+      <p class="mt-1 text-center text-[12px] font-[600]">Blog</p>
+    </div>
+  </div>
+
+  <script>
+    // Higher z-index means "on top"
+    let highestZIndex = 10;
+
+    // A small movement threshold (in px) to distinguish a "click" from a "drag"
+    const DRAG_THRESHOLD = 3;
+
+    const desktop = document.querySelector(".desktop");
+    const draggables = document.querySelectorAll(".draggable");
+
+    // Helper to clamp value between min and max
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    draggables.forEach((draggable) => {
+      // Track offset between pointer position and the top-left corner of the element
+      let offsetX = 0;
+      let offsetY = 0;
+
+      // Track initial pointer-down coordinates to detect small moves vs real drags
+      let startX = 0;
+      let startY = 0;
+
+      // Flag to indicate when an actual drag is happening
+      let isDragging = false;
+
+      const pointerDownHandler = (event) => {
+        // Bring this element to the top
+        draggable.style.zIndex = ++highestZIndex;
+
+        // Record the initial pointer position
+        startX = event.clientX;
+        startY = event.clientY;
+
+        // Calculate the offset from element's position
+        const rect = draggable.getBoundingClientRect();
+        offsetX = event.clientX - rect.left;
+        offsetY = event.clientY - rect.top;
+
+        isDragging = false; // reset drag flag
+
+        // Listen for pointer move/up on the entire document
+        document.addEventListener("pointermove", pointerMoveHandler);
+        document.addEventListener("pointerup", pointerUpHandler);
+      };
+
+      const pointerMoveHandler = (event) => {
+        // Check how far we've moved from the initial pointer-down
+        const deltaX = event.clientX - startX;
+        const deltaY = event.clientY - startY;
+
+        // If the movement exceeds threshold, we're dragging
+        if (
+          !isDragging &&
+          (Math.abs(deltaX) > DRAG_THRESHOLD ||
+            Math.abs(deltaY) > DRAG_THRESHOLD)
+        ) {
+          isDragging = true;
+        }
+
+        if (isDragging) {
+          event.preventDefault(); // prevent text selection during drag
+
+          // Get bounding rect of desktop to clamp movement
+          const desktopRect = desktop.getBoundingClientRect();
+          const draggableRect = draggable.getBoundingClientRect();
+
+          // Calculate the new position
+          let newLeft = event.clientX - offsetX - desktopRect.left;
+          let newTop = event.clientY - offsetY - desktopRect.top;
+
+          // Clamp so the draggable doesn't leave the desktop
+          newLeft = clamp(newLeft, 0, desktopRect.width - draggableRect.width);
+          newTop = clamp(newTop, 0, desktopRect.height - draggableRect.height);
+
+          // Apply the new position
+          draggable.style.left = `${newLeft}px`;
+          draggable.style.top = `${newTop}px`;
+        }
+      };
+
+      const pointerUpHandler = () => {
+        // Cleanup
+        document.removeEventListener("pointermove", pointerMoveHandler);
+        document.removeEventListener("pointerup", pointerUpHandler);
+
+        // If we never exceeded the drag threshold, this was just a click
+        if (!isDragging) {
+          // You can handle “clicked” behavior here if desired
+          // e.g., open the folder, show alert, etc.
+        }
+      };
+
+      // Attach event listener for pointer down
+      draggable.addEventListener("pointerdown", pointerDownHandler);
+    });
+  </script>
 </Layout>
