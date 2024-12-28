@@ -1,3 +1,18 @@
 {
-  "extends": "astro/tsconfigs/strict"
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "strict": true,
+    // optional: allow synthetic default imports, etc.
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "isolatedModules": true,
+    "jsx": "preserve",
+    // If you have path aliases, you can define them here
+  },
+  // Make sure these directories are included
+  "include": [
+    "src",
+    "astro.config.ts"
+  ]
 }

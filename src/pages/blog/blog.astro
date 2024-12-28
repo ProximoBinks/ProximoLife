@@ -1,20 +1,21 @@
 ---
 import Layout from "../../components/Layout.astro";
-import Post from "../../components/Post.astro";
 import { supabase } from "../../utils/database";
 
-let posts = [];
+let posts = null;
 let error = null;
 
-// Fetch posts from Supabase
 if (supabase) {
+  // Query the "posts" table (not "frameworks")
   const { data, error: fetchError } = await supabase
     .from("posts")
     .select("*")
     .order("created_at", { ascending: false });
 
-  posts = data || [];
+  posts = data;
   error = fetchError;
+} else {
+  error = new Error("Supabase client not initialized");
 }
 ---
 
@@ -24,6 +25,12 @@ if (supabase) {
   {error ? (
     <p class="text-red-500">Error fetching posts: {error.message}</p>
   ) : (
-    posts.map((post) => <Post post={post} />)
+    posts?.map((post) => (
+      <article class="border-b border-gray-300 mb-4 pb-4">
+        <h2 class="text-xl font-bold">{post.title}</h2>
+        <p class="text-sm text-gray-400">By {post.author} on {new Date(post.created_at).toLocaleDateString()}</p>
+        <div class="mt-2">{post.content}</div>
+      </article>
+    ))
   )}
 </Layout>

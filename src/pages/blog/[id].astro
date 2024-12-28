@@ -1,31 +1,42 @@
 ---
 import Layout from "../../components/Layout.astro";
-import { supabase } from "../../utils/database";
+import { supabase, Post } from "../../utils/database";
 
+// Grab the URL param from the route (e.g., /blog/xxxx)
 const { id } = Astro.params;
-let post = null;
-let error = null;
 
+let post: Post | null = null;
+let error: any = null;
+
+// Run your query (only if supabase is available)
 if (supabase) {
   const { data, error: fetchError } = await supabase
-    .from("posts")
+    .from("posts")   // match your typed table name
     .select("*")
-    .eq("id", id)
+    .eq("id", id)    // "id" column in your table
     .single();
 
   post = data;
   error = fetchError;
+} else {
+  error = new Error("Supabase client is not initialized");
 }
 ---
 
 <Layout title={post ? post.title : "Post Not Found"}>
   {error || !post ? (
-    <p class="text-red-500">Error loading post: {error?.message || "Not found"}</p>
+    <p class="text-red-500">
+      Error loading post: {error?.message || "Not found"}
+    </p>
   ) : (
     <article class="p-8 border rounded border-neutral-600">
       <h1 class="text-3xl font-bold mb-4">{post.title}</h1>
-      <p class="text-sm text-gray-400">By {post.author} on {new Date(post.created_at).toLocaleDateString()}</p>
-      <div class="prose prose-neutral mt-6">{post.content}</div>
+      <p class="text-sm text-gray-400">
+        By {post.author} on {new Date(post.created_at).toLocaleDateString()}
+      </p>
+      <div class="prose prose-neutral mt-6">
+        {post.content}
+      </div>
     </article>
   )}
 </Layout>
