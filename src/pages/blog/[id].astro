@@ -2,18 +2,39 @@
 import Layout from "../../components/Layout.astro";
 import { supabase, Post } from "../../utils/database";
 
-// Grab the URL param from the route (e.g., /blog/xxxx)
+/** 1) Provide getStaticPaths() so Astro knows which IDs to build at compile time */
+export async function getStaticPaths() {
+  if (!supabase) {
+    // If supabase is null, return empty paths so build doesn't fail
+    return [];
+  }
+
+  // Fetch the full list of post IDs
+  const { data, error } = await supabase.from("posts").select("id");
+  if (!data || error) {
+    // If there's an error or no data, return empty
+    return [];
+  }
+
+  // Map each row to { params: { id: "the-uuid" } }
+  const paths = data.map((row) => ({
+    params: { id: row.id },
+  }));
+
+  return paths;
+}
+
+/** 2) Load a single post via SSR-like call at build time. */
 const { id } = Astro.params;
 
 let post: Post | null = null;
 let error: any = null;
 
-// Run your query (only if supabase is available)
 if (supabase) {
   const { data, error: fetchError } = await supabase
-    .from("posts")   // match your typed table name
+    .from("posts")
     .select("*")
-    .eq("id", id)    // "id" column in your table
+    .eq("id", id)
     .single();
 
   post = data;
@@ -34,9 +55,7 @@ if (supabase) {
       <p class="text-sm text-gray-400">
         By {post.author} on {new Date(post.created_at).toLocaleDateString()}
       </p>
-      <div class="prose prose-neutral mt-6">
-        {post.content}
-      </div>
+      <div class="prose prose-neutral mt-6">{post.content}</div>
     </article>
   )}
 </Layout>
