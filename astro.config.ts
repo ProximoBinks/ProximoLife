@@ -3,9 +3,6 @@ import netlify from '@astrojs/netlify';
 import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
-  // Astro's official recommendation is to put TS settings in tsconfig.json
-  // not in astro.config.ts, so we remove `typescript: { strict: true }`.
-
   markdown: {
     shikiConfig: {
       theme: 'github-light-high-contrast',
@@ -16,6 +13,6 @@ export default defineConfig({
       applyBaseStyles: false,
     }),
   ],
-  output: 'hybrid',
+  output: 'server',
   adapter: netlify(),
 });

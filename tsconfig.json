@@ -1,16 +1,13 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
+    "module": "Node16",
     "strict": true,
-    // optional: allow synthetic default imports, etc.
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "isolatedModules": true,
-    "jsx": "preserve",
-    // If you have path aliases, you can define them here
+    "jsx": "preserve"
   },
-  // Make sure these directories are included
   "include": [
     "src",
     "astro.config.ts"

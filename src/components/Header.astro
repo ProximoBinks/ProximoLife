@@ -17,13 +17,13 @@ function getAdelaideTime() {
   <!-- Left: Adelaide Time -->
   <div
     id="adelaide-time"
-    class="absolute left-0 bg-black text-white py-1 px-2 text-3xl font-bold"
+    class="hidden md:block absolute left-0 bg-black text-white py-1 px-2 text-3xl font-bold"
   >
     {getAdelaideTime()}
   </div>
 
   <!-- Center: GIF -->
-  <div class="flex justify-center w-full">
+  <div class="hidden md:flex justify-center w-full">
     <a href="/">
       <img
         src="/images/nav.gif"
@@ -34,7 +34,7 @@ function getAdelaideTime() {
   </div>
 
   <!-- Right: Proximo Text -->
-  <div class="absolute right-0 text-3xl font-bold text-[#5b5bf3]">proximo</div>
+  <a href="/" class="mt-3 md:mt-0 md:absolute md:right-0 text-3xl font-bold text-[#5b5bf3]">proximo</a>
 
   <script>
     // Update the time dynamically

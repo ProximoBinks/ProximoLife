@@ -3,178 +3,45 @@ import Layout from "../components/Layout.astro";
 ---
 
 <Layout title="proximo | Home">
-  <div class="w-[550px] h-[50px] bg-[#d1d0d1] rounded-t-lg">
-    <div class="flex justify-between items-center h-full px-4">
-      <div class="flex items-center">
-        <div class="w-[10px] h-[10px] bg-[#ff5f56] rounded-full mr-2"></div>
-        <div class="w-[10px] h-[10px] bg-[#ffbd2e] rounded-full mr-2"></div>
-        <div class="w-[10px] h-[10px] bg-[#27c93f] rounded-full"></div>
-      </div>
-  </div>
-  Archive
-  </div>
-  <div class="w-[550px] h-[300px] bg-[#ececec] rounded-b-lg drop-shadow-2xl mb-10 border border-[#cecdcd] col-span-3">
-    <div>
-      hello
-    </div>
-    <div>
-      hello
-    </div>
-    <div>
-      hello
-    </div>
-  </div>
-  <div class="desktop bg-white w-full h-screen relative overflow-hidden select-none">
-    <!-- TEAM Folder Icon: Double-click to open a Finder-like window -->
-    <div id="folderIcon" class="draggable" style="right:50px; top:50px;">
-      <img src="/images/Folder.png" alt="Folder" class="icon" draggable="false" />
-      <p class="mt-1 text-center text-[12px] font-[600]">Folder</p>
-    </div>
-
-    <!-- The Finder-like “TEAM Window” (hidden by default) -->
-    <div id="teamWindow" class="window hidden" style="left:200px; top:100px;">
-      <!-- Title bar to drag the window around -->
-      <div class="title-bar flex justify-between items-center p-2 bg-gray-200 cursor-grab">
-        <span>TEAM</span>
-        <button id="closeTeamWindow" class="px-2 py-1 bg-red-500 text-white">X</button>
+  <div class="h-[66vh]">
+    <div class="max-w-[550px] w-auto rounded-lg border border-[#cecdcd] shadow-2xl">
+      <!-- Window Header (Title Bar) -->
+      <div class="h-[50px] bg-[#d1d0d1] rounded-t-lg flex items-center px-4">
+        <!-- macOS-style Buttons -->
+        <div class="flex items-center space-x-2">
+          <div class="w-[12px] h-[12px] bg-[#ff5f56] rounded-full"></div>
+          <div class="w-[12px] h-[12px] bg-[#ffbd2e] rounded-full"></div>
+          <div class="w-[12px] h-[12px] bg-[#27c93f] rounded-full"></div>
+        </div>
       </div>
 
-      <!-- Window content area -->
-      <div class="window-content p-4 bg-white">
-        <p>chlo.jpg</p>
-        <p>fuz.jpg</p>
-        <p>joe.jpg</p>
-        <p>v.jpeg</p>
+      <!-- Window Content (Folder & Files) -->
+      <div class="h-[300px] bg-[#ececec] rounded-b-lg flex flex-col p-6">
+        <!-- Folder Name -->
+        <div class="text-gray-700 font-semibold mb-4">📁 My Folder</div>
+
+        <!-- Files (Navigation Links) -->
+        <div class="flex flex-col space-y-2">
+          <a
+            href="/blog/blog"
+            class="flex items-center text-gray-800 hover:opacity-80"
+          >
+            📄 Blog.md
+          </a>
+          <a
+            href="/about"
+            class="flex items-center text-gray-800 hover:opacity-80"
+          >
+            📄 About.txt
+          </a>
+          <a
+            href="/contact"
+            class="flex items-center text-gray-800 hover:opacity-80"
+          >
+            📄 Contact.doc
+          </a>
+        </div>
       </div>
     </div>
-
-    <!-- YOUR OTHER ICONS (Finder, Trash, Blog Folder, etc.) -->
-    <div id="finder" class="draggable" style="right:150px; top:225px;">
-      <img src="/images/Finder.png" alt="Finder" class="icon" draggable="false" />
-      <p class="mt-1 text-center text-[12px] font-[600]">Finder</p>
-    </div>
-    <div id="trash" class="draggable" style="right:150px; top:335px;">
-      <img src="/images/Trash.png" alt="Trash" class="icon" draggable="false" />
-    </div>
-    <div id="folderBlog" class="draggable" style="right:50px; top:150px;">
-      <img src="/images/DeveloperFolder.png" alt="Folder" class="icon" draggable="false" />
-      <p class="mt-1 text-center text-[12px] font-[600]">Blog</p>
-    </div>
   </div>
-
-  <!-- Use a plain <script> block with no TypeScript -->
-  <script>
-    // Keep track of the highest z-index so the last clicked item is "on top"
-    let highestZIndex = 10;
-    const DRAG_THRESHOLD = 3;
-
-    // reference the .desktop container
-    const desktop = document.querySelector(".desktop");
-
-    // Make each icon/window draggable
-    const allDraggables = document.querySelectorAll(".draggable");
-    allDraggables.forEach((item) => {
-      if (item instanceof HTMLElement) {
-        makeDraggable(item);
-      }
-    });
-
-    // Access the TEAM window and make it draggable by its title bar
-    const teamWindow = document.getElementById("teamWindow");
-    if (teamWindow instanceof HTMLElement) {
-      const titleBar = teamWindow.querySelector(".title-bar");
-      if (titleBar instanceof HTMLElement) {
-        makeDraggable(teamWindow, titleBar);
-      }
-    }
-
-    // Show TEAM window on double-click
-    const folderIcon = document.getElementById("folderIcon");
-    if (folderIcon instanceof HTMLElement && teamWindow instanceof HTMLElement) {
-      folderIcon.addEventListener("dblclick", () => {
-        teamWindow.classList.remove("hidden");
-        // Bring it to top
-        highestZIndex++;
-        teamWindow.style.zIndex = highestZIndex.toString();
-      });
-    }
-
-    // Close the window
-    const closeTeamWindow = document.getElementById("closeTeamWindow");
-    if (closeTeamWindow instanceof HTMLElement && teamWindow instanceof HTMLElement) {
-      closeTeamWindow.addEventListener("click", () => {
-        teamWindow.classList.add("hidden");
-      });
-    }
-
-    /**
-     * Make an element draggable. If handleElement is provided, only that
-     * sub-element (e.g., the title bar) initiates the drag. Otherwise,
-     * the entire element is draggable.
-     */
-    function makeDraggable(draggable: HTMLElement, handleElement?: HTMLElement) {
-      let offsetX = 0;
-      let offsetY = 0;
-      let startX = 0;
-      let startY = 0;
-      let isDragging = false;
-
-      // If handleElement is not given, fall back to the entire element
-      const handle = handleElement || draggable;
-      handle.addEventListener("pointerdown", pointerDownHandler);
-
-      function pointerDownHandler(e: PointerEvent) {
-        // Bring to front
-        highestZIndex++;
-        draggable.style.zIndex = highestZIndex.toString();
-
-        startX = e.clientX;
-        startY = e.clientY;
-
-        const rect = draggable.getBoundingClientRect();
-        offsetX = e.clientX - rect.left;
-        offsetY = e.clientY - rect.top;
-        isDragging = false;
-
-        document.addEventListener("pointermove", pointerMoveHandler);
-        document.addEventListener("pointerup", pointerUpHandler);
-      }
-
-      function pointerMoveHandler(e: PointerEvent) {
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
-
-        // Only start dragging if movement passes a small threshold
-        if (!isDragging && (Math.abs(deltaX) > DRAG_THRESHOLD || Math.abs(deltaY) > DRAG_THRESHOLD)) {
-          isDragging = true;
-        }
-        if (isDragging && desktop instanceof HTMLElement) {
-          e.preventDefault();
-          const desktopRect = desktop.getBoundingClientRect();
-          const draggableRect = draggable.getBoundingClientRect();
-
-          let newLeft = e.clientX - offsetX - desktopRect.left;
-          let newTop = e.clientY - offsetY - desktopRect.top;
-
-          // (Optional) clamp so user can't drag it off-screen
-          if (newLeft < 0) newLeft = 0;
-          if (newTop < 0) newTop = 0;
-          if (newLeft + draggableRect.width > desktopRect.width) {
-            newLeft = desktopRect.width - draggableRect.width;
-          }
-          if (newTop + draggableRect.height > desktopRect.height) {
-            newTop = desktopRect.height - draggableRect.height;
-          }
-
-          draggable.style.left = newLeft + "px";
-          draggable.style.top = newTop + "px";
-        }
-      }
-
-      function pointerUpHandler() {
-        document.removeEventListener("pointermove", pointerMoveHandler);
-        document.removeEventListener("pointerup", pointerUpHandler);
-      }
-    }
-  </script>
 </Layout>
