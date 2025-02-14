@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { supabase } from "../../../../utils/database";
+import { supabase } from "../../../../utils/database.js";
 
 export const prerender = false;
 
