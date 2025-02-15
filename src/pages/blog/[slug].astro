@@ -2,30 +2,21 @@
 import Layout from "../../components/Layout.astro";
 import { supabase, Post } from "../../utils/database";
 
-/** 1) Provide getStaticPaths() so Astro knows which IDs to build at compile time */
 export async function getStaticPaths() {
-  if (!supabase) {
-    // If supabase is null, return empty paths so build doesn't fail
-    return [];
-  }
+  if (!supabase) return { paths: [], fallback: false };
 
-  // Fetch the full list of post IDs
-  const { data, error } = await supabase.from("posts").select("id");
-  if (!data || error) {
-    // If there's an error or no data, return empty
-    return [];
-  }
+  const { data, error } = await supabase.from("posts").select("slug");
+  if (!data || error) return { paths: [], fallback: false };
 
-  // Map each row to { params: { id: "the-uuid" } }
-  const paths = data.map((row) => ({
-    params: { id: row.id },
-  }));
-
-  return paths;
+  return {
+    paths: data.map((row) => ({
+      params: { slug: row.slug },
+    })),
+    fallback: false,
+  };
 }
 
-/** 2) Load a single post via SSR-like call at build time. */
-const { id } = Astro.params;
+const { slug } = Astro.params;
 
 let post: Post | null = null;
 let error: any = null;
@@ -34,7 +25,7 @@ if (supabase) {
   const { data, error: fetchError } = await supabase
     .from("posts")
     .select("*")
-    .eq("id", id)
+    .eq("slug", slug)
     .single();
 
   post = data;
@@ -50,12 +41,15 @@ if (supabase) {
       Error loading post: {error?.message || "Not found"}
     </p>
   ) : (
-    <article class="p-8 border rounded border-neutral-600">
+    <article class="max-w-2xl mx-auto p-8 border border-gray-300 rounded-lg shadow">
       <h1 class="text-3xl font-bold mb-4">{post.title}</h1>
       <p class="text-sm text-gray-400">
         By {post.author} on {new Date(post.created_at).toLocaleDateString()}
       </p>
       <div class="prose prose-neutral mt-6">{post.content}</div>
+      <a href="/blog" class="mt-6 inline-block text-blue-500 hover:underline">
+        ← Back to Blog
+      </a>
     </article>
   )}
 </Layout>

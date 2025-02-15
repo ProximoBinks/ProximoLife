@@ -12,12 +12,12 @@ function getAdelaideTime() {
 ---
 
 <header
-  class="max-w-7xl mx-auto mb-16 flex items-center justify-between relative"
+  class="max-w-7xl mx-auto px-3 md:px-10 mb-16 flex items-center justify-between relative"
 >
   <!-- Left: Adelaide Time -->
   <div
     id="adelaide-time"
-    class="hidden md:block absolute left-0 bg-black text-white py-1 px-2 text-3xl font-bold"
+    class="hidden md:block absolute left-9 bg-black text-white py-1 px-2 text-3xl font-bold"
   >
     {getAdelaideTime()}
   </div>
@@ -34,7 +34,12 @@ function getAdelaideTime() {
   </div>
 
   <!-- Right: Proximo Text -->
-  <a href="/" class="mt-3 md:mt-0 md:absolute md:right-0 text-3xl font-bold text-[#5b5bf3]">proximo</a>
+  <a
+    href="/"
+    class="mt-4 md:mt-0 md:absolute md:right-9 text-3xl font-bold text-[#5b5bf3]"
+  >
+    proximo
+  </a>
 
   <script>
     // Update the time dynamically
@@ -48,7 +53,7 @@ function getAdelaideTime() {
           second: "2-digit",
           hour12: false,
         });
-        timeElement.textContent = `${adelaideTime}`;
+        timeElement.textContent = adelaideTime;
       }
     };
 

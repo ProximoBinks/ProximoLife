@@ -1,0 +1,44 @@
+---
+import Layout from "../components/Layout.astro";
+import { supabase } from "../utils/database";
+
+let posts = null;
+let error = null;
+
+if (supabase) {
+  const { data, error: fetchError } = await supabase
+    .from("posts")
+    .select("title, slug, author, created_at, content")
+    .order("created_at", { ascending: false });
+
+  posts = data;
+  error = fetchError;
+} else {
+  error = new Error("Supabase client not initialized");
+}
+---
+
+<Layout title="Blog">
+  <h1 class="mb-8 text-4xl font-bold">digital diary</h1>
+
+  {error ? (
+    <p class="text-red-500">Error fetching posts: {error.message}</p>
+  ) : (
+    <div class="space-y-6">
+      {posts?.map((post) => (
+        <article class="border-b border-gray-300 pb-4">
+          <a href={`/blog/${post.slug}`} class="block">
+            <h2 class="text-xl font-bold hover:underline">{post.title}</h2>
+          </a>
+          <p class="text-sm text-gray-400">
+            By {post.author} on {new Date(post.created_at).toLocaleDateString()}
+          </p>
+          <p class="mt-2 text-gray-700">{post.content.substring(0, 150)}...</p>  
+          <a href={`/blog/${post.slug}`} class="text-blue-500 hover:underline">
+            Read more →
+          </a>
+        </article>
+      ))}
+    </div>
+  )}
+</Layout>

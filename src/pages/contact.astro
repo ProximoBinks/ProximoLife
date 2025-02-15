@@ -1,0 +1,112 @@
+---
+import Layout from "../components/Layout.astro";
+---
+
+<script is:inline>
+  async function handleSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.get("name"),
+          email: formData.get("email"),
+          message: formData.get("message"),
+        }),
+      });
+
+      const result = await response.json();
+      const statusMessage = document.getElementById("status-message");
+
+      if (response.ok && result.success) {
+        statusMessage.textContent = "✅ Email sent successfully!";
+        statusMessage.classList.remove("text-red-600");
+        statusMessage.classList.add("text-green-600");
+        form.reset();
+      } else {
+        statusMessage.textContent = "❌ Failed to send email. Try again.";
+        statusMessage.classList.remove("text-green-600");
+        statusMessage.classList.add("text-red-600");
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      const statusMessage = document.getElementById("status-message");
+      statusMessage.textContent = "❌ Something went wrong. Try again.";
+      statusMessage.classList.remove("text-green-600");
+      statusMessage.classList.add("text-red-600");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("contact-form");
+    form.addEventListener("submit", handleSubmit);
+  });
+</script>
+
+<Layout title="Proximo | Contact">
+  <div class="h-[66vh]">
+    <div class="max-w-[550px] w-auto rounded-lg border border-[#cecdcd] shadow-2xl">
+      <!-- Window Header (Title Bar) -->
+      <div class="h-[50px] bg-[#d1d0d1] rounded-t-lg flex items-center justify-between px-4">
+        <!-- Left: macOS-style Buttons -->
+        <div class="flex items-center space-x-2">
+          <div class="w-[12px] h-[12px] bg-[#ff5f56] rounded-full"></div>
+          <div class="w-[12px] h-[12px] bg-[#ffbd2e] rounded-full"></div>
+          <div class="w-[12px] h-[12px] bg-[#27c93f] rounded-full"></div>
+        </div>
+
+        <!-- Right: Go Back Button -->
+        <button
+          type="button"
+          onclick="history.back()"
+          class="text-sm bg-white text-black px-2 py-1 rounded hover:opacity-80 transition"
+        >
+          ← Go Back
+        </button>
+      </div>
+
+      <!-- Window Content -->
+      <div class="h-[300px] bg-[#ececec] rounded-b-lg flex flex-col px-6 py-4">
+        <!-- Document Name -->
+        <div class="text-gray-700 font-semibold mb-3">📁 Contact.doc</div>
+
+        <!-- Contact Form -->
+        <form id="contact-form" class="flex flex-col space-y-3">
+          <input
+            type="text"
+            name="name"
+            placeholder="Your Name"
+            required
+            class="border p-2 rounded bg-white"
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Your Email"
+            required
+            class="border p-2 rounded bg-white"
+          />
+          <textarea
+            name="message"
+            placeholder="Your Message"
+            required
+            class="border p-2 rounded bg-white h-[75px]"
+          ></textarea>
+
+          <button
+            type="submit"
+            class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
+          >
+            Send Message
+          </button>
+
+          <p id="status-message" class="text-sm mt-2"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+</Layout>

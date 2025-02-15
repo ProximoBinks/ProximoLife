@@ -1,0 +1,70 @@
+---
+import Layout from "../../components/Layout.astro";
+import { supabase } from "../../utils/database";
+---
+
+<Layout title="New Blog Post">
+  <div class="max-w-lg mx-auto p-6 border border-gray-300 rounded-lg shadow">
+    <h1 class="text-2xl font-bold mb-4">Create a New Blog Post</h1>
+
+    <form id="new-post-form" class="flex flex-col space-y-3">
+      <input type="text" name="title" placeholder="Title" required class="border p-2 rounded bg-white" />
+      <input type="text" name="author" placeholder="Author" required class="border p-2 rounded bg-white" />
+      <textarea name="content" placeholder="Post Content" required class="border p-2 rounded bg-white h-32"></textarea>
+
+      <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition">
+        Publish Post
+      </button>
+
+      <p id="status-message" class="text-sm mt-2 text-gray-700"></p>
+    </form>
+  </div>
+</Layout>
+
+<!-- ✅ Move JavaScript to run on the client -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("new-post-form");
+    const statusMessage = document.getElementById("status-message");
+
+    if (form) {
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+
+        const title = formData.get("title");
+        const content = formData.get("content");
+        const author = formData.get("author");
+
+        if (!title || !content || !author) {
+          statusMessage.textContent = "❌ All fields are required!";
+          statusMessage.classList.add("text-red-500");
+          return;
+        }
+
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+        try {
+          const { error } = await fetch("/api/new-post", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, content, author, slug }),
+          }).then((res) => res.json());
+
+          if (error) {
+            statusMessage.textContent = `❌ Error: ${error.message}`;
+            statusMessage.classList.add("text-red-500");
+          } else {
+            statusMessage.textContent = "✅ Post created successfully!";
+            statusMessage.classList.remove("text-red-500");
+            statusMessage.classList.add("text-green-500");
+            form.reset();
+          }
+        } catch (err) {
+          statusMessage.textContent = "❌ Unexpected error. Try again.";
+          statusMessage.classList.add("text-red-500");
+        }
+      });
+    }
+  });
+</script>
