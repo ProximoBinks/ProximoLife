@@ -1,0 +1,28 @@
+---
+// LayoutWithoutTransitions.astro
+import "../../src/styles/globals.css";
+import Footer from "./Footer.astro";
+import Header from "./Header.astro";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+  </head>
+  <body class="px-4 antialiased text-black bg-white sm:px-8">
+    <Header />
+    <main class="w-full max-w-7xl mx-auto grow">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

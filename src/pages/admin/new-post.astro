@@ -1,13 +1,13 @@
 ---
-import Layout from "../../components/Layout.astro";
+import LayoutWithoutTransitions from "../../components/LayoutWithoutTransitions.astro";
 import { supabase } from "../../utils/database";
 ---
 
-<Layout title="New Blog Post">
+<LayoutWithoutTransitions title="New Blog Post">
   <div class="max-w-lg mx-auto p-6 border border-gray-300 rounded-lg shadow">
     <h1 class="text-2xl font-bold mb-4">Create a New Blog Post</h1>
 
-    <form id="new-post-form" class="flex flex-col space-y-3">
+    <form id="new-post-form" method="POST" class="flex flex-col space-y-3">
       <input type="text" name="title" placeholder="Title" required class="border p-2 rounded bg-white" />
       <input type="text" name="author" placeholder="Author" required class="border p-2 rounded bg-white" />
       <textarea name="content" placeholder="Post Content" required class="border p-2 rounded bg-white h-32"></textarea>
@@ -19,7 +19,7 @@ import { supabase } from "../../utils/database";
       <p id="status-message" class="text-sm mt-2 text-gray-700"></p>
     </form>
   </div>
-</Layout>
+</LayoutWithoutTransitions>
 
 <!-- ✅ Move JavaScript to run on the client -->
 <script>

@@ -1,5 +1,5 @@
 ---
-import Layout from "../components/Layout.astro";
+import LayoutWithoutTransitions from "../components/LayoutWithoutTransitions.astro";
 ---
 
 <script is:inline>
@@ -47,7 +47,7 @@ import Layout from "../components/Layout.astro";
   });
 </script>
 
-<Layout title="Proximo | Contact">
+<LayoutWithoutTransitions title="Proximo | Contact">
   <div class="h-[66vh]">
     <div class="max-w-[550px] w-auto rounded-lg border border-[#cecdcd] shadow-2xl">
       <!-- Window Header (Title Bar) -->
@@ -75,7 +75,7 @@ import Layout from "../components/Layout.astro";
         <div class="text-gray-700 font-semibold mb-3">📁 Contact.doc</div>
 
         <!-- Contact Form -->
-        <form id="contact-form" class="flex flex-col space-y-3">
+        <form id="contact-form" method="POST" class="flex flex-col space-y-3">
           <input
             type="text"
             name="name"
@@ -109,4 +109,4 @@ import Layout from "../components/Layout.astro";
       </div>
     </div>
   </div>
-</Layout>
+</LayoutWithoutTransitions>
