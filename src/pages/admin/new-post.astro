@@ -4,20 +4,41 @@ import { supabase } from "../../utils/database";
 ---
 
 <LayoutWithoutTransitions title="New Blog Post">
-  <div class="max-w-lg mx-auto p-6 border border-gray-300 rounded-lg shadow">
-    <h1 class="text-2xl font-bold mb-4">Create a New Blog Post</h1>
+  <div class="h-[66vh]">
+    <div class="max-w-lg mx-auto p-6 border border-gray-300 rounded-lg shadow">
+      <h1 class="text-2xl font-bold mb-4">Create a New Blog Post</h1>
 
-    <form id="new-post-form" method="POST" class="flex flex-col space-y-3">
-      <input type="text" name="title" placeholder="Title" required class="border p-2 rounded bg-white" />
-      <input type="text" name="author" placeholder="Author" required class="border p-2 rounded bg-white" />
-      <textarea name="content" placeholder="Post Content" required class="border p-2 rounded bg-white h-32"></textarea>
+      <form id="new-post-form" method="POST" class="flex flex-col space-y-3">
+        <input
+          type="text"
+          name="title"
+          placeholder="Title"
+          required
+          class="border p-2 rounded bg-white"
+        />
+        <input
+          type="text"
+          name="author"
+          placeholder="Author"
+          required
+          class="border p-2 rounded bg-white"
+        />
+        <textarea
+          name="content"
+          placeholder="Post Content"
+          required
+          class="border p-2 rounded bg-white h-32"></textarea>
 
-      <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition">
-        Publish Post
-      </button>
+        <button
+          type="submit"
+          class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
+        >
+          Publish Post
+        </button>
 
-      <p id="status-message" class="text-sm mt-2 text-gray-700"></p>
-    </form>
+        <p id="status-message" class="text-sm mt-2 text-gray-700"></p>
+      </form>
+    </div>
   </div>
 </LayoutWithoutTransitions>
 
@@ -42,7 +63,10 @@ import { supabase } from "../../utils/database";
           return;
         }
 
-        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        const slug = title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
 
         try {
           const { error } = await fetch("/api/new-post", {

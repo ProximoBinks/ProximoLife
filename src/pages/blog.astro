@@ -19,7 +19,11 @@ if (supabase) {
 ---
 
 <Layout title="Blog">
-  <h1 class="mb-8 text-4xl font-bold">digital diary</h1>
+  <div class="h-[66vh]">
+  <h1 class="mb-2 text-4xl font-bold">digital diary</h1>
+  <a href="/" class="mb-8 inline-block hover:underline">
+    ← Back
+  </a>
 
   {error ? (
     <p class="text-red-500">Error fetching posts: {error.message}</p>
@@ -41,4 +45,5 @@ if (supabase) {
       ))}
     </div>
   )}
+  </div>
 </Layout>
