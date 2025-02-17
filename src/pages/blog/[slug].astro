@@ -32,14 +32,14 @@ if (supabase) {
   error = fetchError;
 
   // ✅ Increment view count
-  if (post) {
-    await supabase
-      .from("posts")
-      .update({ views: post.views + 1 })
-      .eq("slug", slug);
-  }
-} else {
-  error = new Error("Supabase client is not initialized");
+//   if (post) {
+//     await supabase
+//       .from("posts")
+//       .update({ views: post.views + 1 })
+//       .eq("slug", slug);
+//   }
+// } else {
+//   error = new Error("Supabase client is not initialized");
 }
 ---
 
@@ -52,21 +52,29 @@ if (supabase) {
     ) : (
       <article class="max-w-2xl mx-auto p-8 border border-gray-300 rounded-lg shadow">
         <h1 class="text-3xl font-bold mb-4">{post.title}</h1>
+        {/* <a href="/blog" class="mb-4 inline-block hover:underline">← Back</a> */}
         <p class="text-sm text-gray-400">
           By {post.author} on {new Date(post.created_at).toLocaleDateString()} ·{" "}
-          {post.views} views
+          {post.views} views ·{" "} {post.likes} likes
         </p>
+        <div class="mt-4 flex gap-2">
+              {post.tags.map(tag => (
+                <span class="text-xs bg-gray-300 px-2 py-1 rounded">{tag}</span>
+              ))}
+            </div>
 
         <div class="prose prose-neutral mt-6" set:html={post.content} />
 
         <div class="flex items-center mt-4">
-          <button
+          <img
             id="like-button"
-            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            class="w-5 h-5 cursor-pointer transition-opacity hover:opacity-80"
+            src="/images/heart.svg"
+            alt="Like"
             data-slug={post.slug}
-          >
-            👍 Like (<span id="like-count">{post.likes}</span>)
-          </button>
+            data-liked="false"
+          />
+          <span id="like-count" class="ml-1 text-md font-semibold">{post.likes}</span>
         </div>
 
         <a href="/blog" class="mt-6 inline-block text-blue-500 hover:underline">
@@ -83,14 +91,15 @@ if (supabase) {
     const likeCount = document.getElementById("like-count");
     const slug = likeButton.dataset.slug;
 
-    // Disable or hide the button if already liked
+    // Check localStorage for liked state
     if (localStorage.getItem(`liked_${slug}`)) {
-      likeButton.disabled = true;  // or style differently or hide
+      likeButton.src = "/images/heart-filled.svg";
+      likeButton.dataset.liked = "true";
+      likeButton.style.pointerEvents = "none"; // Prevent clicking after liking
     }
 
     likeButton.addEventListener("click", async () => {
-      // If localStorage says user has already liked, do nothing
-      if (localStorage.getItem(`liked_${slug}`)) return;
+      if (likeButton.dataset.liked === "true") return; // Prevent multiple likes
 
       try {
         const response = await fetch("/api/like-post", {
@@ -101,14 +110,15 @@ if (supabase) {
 
         const result = await response.json();
         if (result.success) {
-          // Update count
           likeCount.textContent = result.newLikes;
+          likeButton.src = "/images/heart-filled.svg";
+          likeButton.dataset.liked = "true";
 
           // Mark as liked in localStorage
           localStorage.setItem(`liked_${slug}`, "true");
 
-          // Optionally disable the button or change the UI
-          likeButton.disabled = true;
+          // Prevent further clicks
+          likeButton.style.pointerEvents = "none";
         } else {
           console.error("Error:", result.error);
         }

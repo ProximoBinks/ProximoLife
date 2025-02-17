@@ -8,7 +8,7 @@ export const POST = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Missing slug" }), { status: 400 });
     }
 
-    // 1) Fetch the current view count
+    // ✅ Fetch current views
     const { data, error } = await supabase
       .from("posts")
       .select("views")
@@ -19,20 +19,25 @@ export const POST = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Post not found" }), { status: 404 });
     }
 
-    // 2) Increment views
+    // ✅ Check if user already viewed this post (Simulating a user session via localStorage)
+    const viewedPosts = JSON.parse(request.headers.get("X-Viewed-Posts") || "[]");
+
+    if (viewedPosts.includes(slug)) {
+      return new Response(JSON.stringify({ success: true, newViews: data.views }), { status: 200 });
+    }
+
+    // ✅ Increment view count
+    const newViews = data.views + 1;
     const { error: updateError } = await supabase
       .from("posts")
-      .update({ views: data.views + 1 })
+      .update({ views: newViews })
       .eq("slug", slug);
 
     if (updateError) {
       return new Response(JSON.stringify({ error: updateError.message }), { status: 500 });
     }
 
-    return new Response(
-      JSON.stringify({ success: true, newViews: data.views + 1 }),
-      { status: 200 }
-    );
+    return new Response(JSON.stringify({ success: true, newViews }), { status: 200 });
   } catch (err) {
     return new Response(
       JSON.stringify({ error: "Server error", details: err.message }),
