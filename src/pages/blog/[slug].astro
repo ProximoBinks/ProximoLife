@@ -46,7 +46,9 @@ if (supabase) {
       <p class="text-sm text-gray-400">
         By {post.author} on {new Date(post.created_at).toLocaleDateString()}
       </p>
-      <div class="prose prose-neutral mt-6">{post.content}</div>
+      <!-- Render post.content as raw HTML here -->
+      <div class="prose prose-neutral mt-6" set:html={post.content}></div>
+      
       <a href="/blog" class="mt-6 inline-block text-blue-500 hover:underline">
         ← Back to Blog
       </a>
