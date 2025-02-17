@@ -1,5 +1,5 @@
 ---
-import Layout from "../../components/Layout.astro";
+import LayoutWithoutTransitions from "../../components/LayoutWithoutTransitions.astro";
 import { supabase, Post } from "../../utils/database";
 
 export async function getStaticPaths() {
@@ -30,28 +30,91 @@ if (supabase) {
 
   post = data;
   error = fetchError;
+
+  // ✅ Increment view count
+  if (post) {
+    await supabase
+      .from("posts")
+      .update({ views: post.views + 1 })
+      .eq("slug", slug);
+  }
 } else {
   error = new Error("Supabase client is not initialized");
 }
 ---
 
-<Layout title={post ? post.title : "Post Not Found"}>
-  {error || !post ? (
-    <p class="text-red-500">
-      Error loading post: {error?.message || "Not found"}
-    </p>
-  ) : (
-    <article class="max-w-2xl mx-auto p-8 border border-gray-300 rounded-lg shadow">
-      <h1 class="text-3xl font-bold mb-4">{post.title}</h1>
-      <p class="text-sm text-gray-400">
-        By {post.author} on {new Date(post.created_at).toLocaleDateString()}
+<LayoutWithoutTransitions title={post ? post.title : "Post Not Found"}>
+  {
+    error || !post ? (
+      <p class="text-red-500">
+        Error loading post: {error?.message || "Not found"}
       </p>
-      <!-- Render post.content as raw HTML here -->
-      <div class="prose prose-neutral mt-6" set:html={post.content}></div>
-      
-      <a href="/blog" class="mt-6 inline-block text-blue-500 hover:underline">
-        ← Back to Blog
-      </a>
-    </article>
-  )}
-</Layout>
+    ) : (
+      <article class="max-w-2xl mx-auto p-8 border border-gray-300 rounded-lg shadow">
+        <h1 class="text-3xl font-bold mb-4">{post.title}</h1>
+        <p class="text-sm text-gray-400">
+          By {post.author} on {new Date(post.created_at).toLocaleDateString()} ·{" "}
+          {post.views} views
+        </p>
+
+        <div class="prose prose-neutral mt-6" set:html={post.content} />
+
+        <div class="flex items-center mt-4">
+          <button
+            id="like-button"
+            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            data-slug={post.slug}
+          >
+            👍 Like (<span id="like-count">{post.likes}</span>)
+          </button>
+        </div>
+
+        <a href="/blog" class="mt-6 inline-block text-blue-500 hover:underline">
+          ← Back to Blog
+        </a>
+      </article>
+    )
+  }
+</LayoutWithoutTransitions>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const likeButton = document.getElementById("like-button");
+    const likeCount = document.getElementById("like-count");
+    const slug = likeButton.dataset.slug;
+
+    // Disable or hide the button if already liked
+    if (localStorage.getItem(`liked_${slug}`)) {
+      likeButton.disabled = true;  // or style differently or hide
+    }
+
+    likeButton.addEventListener("click", async () => {
+      // If localStorage says user has already liked, do nothing
+      if (localStorage.getItem(`liked_${slug}`)) return;
+
+      try {
+        const response = await fetch("/api/like-post", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          // Update count
+          likeCount.textContent = result.newLikes;
+
+          // Mark as liked in localStorage
+          localStorage.setItem(`liked_${slug}`, "true");
+
+          // Optionally disable the button or change the UI
+          likeButton.disabled = true;
+        } else {
+          console.error("Error:", result.error);
+        }
+      } catch (error) {
+        console.error("Failed to like post:", error);
+      }
+    });
+  });
+</script>

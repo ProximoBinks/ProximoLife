@@ -8,10 +8,15 @@ let error = null;
 if (supabase) {
   const { data, error: fetchError } = await supabase
     .from("posts")
-    .select("title, slug, author, created_at, content")
+    .select("title, slug, author, created_at, content, tags")
     .order("created_at", { ascending: false });
 
-  posts = data;
+  // ✅ Ensure tags always exist as an array
+  posts = data?.map(post => ({
+    ...post,
+    tags: post.tags ?? [],  // If tags is null, replace it with an empty array
+  })) || [];
+
   error = fetchError;
 } else {
   error = new Error("Supabase client not initialized");
@@ -20,30 +25,54 @@ if (supabase) {
 
 <Layout title="Blog">
   <div class="h-[66vh]">
-  <h1 class="mb-2 text-4xl font-bold">digital diary</h1>
-  <a href="/" class="mb-8 inline-block hover:underline">
-    ← Back
-  </a>
+    <h1 class="mb-2 text-4xl font-bold">digital diary</h1>
+    <a href="/" class="mb-8 inline-block hover:underline">← Back</a>
 
-  {error ? (
-    <p class="text-red-500">Error fetching posts: {error.message}</p>
-  ) : (
-    <div class="space-y-6">
-      {posts?.map((post) => (
-        <article class="border-b border-gray-300 pb-4">
-          <a href={`/blog/${post.slug}`} class="block">
-            <h2 class="text-xl font-bold hover:underline">{post.title}</h2>
-          </a>
-          <p class="text-sm text-gray-400">
-            By {post.author} on {new Date(post.created_at).toLocaleDateString()}
-          </p>
-          <p class="mt-2 text-gray-700">{post.content.substring(0, 150)}...</p>  
-          <a href={`/blog/${post.slug}`} class="text-blue-500 hover:underline">
-            Read more →
-          </a>
-        </article>
-      ))}
+    <!-- Tags Filter -->
+    <div>
+      <label for="tag-filter" class="font-bold">Filter by Tag:</label>
+      <select id="tag-filter" class="border p-2 rounded">
+        <option value="">All</option>
+        {posts
+          ?.flatMap(post => post.tags)
+          .filter((v, i, a) => v && a.indexOf(v) === i)
+          .map(tag => (
+            <option value={tag}>{tag}</option>
+          ))}
+      </select>
     </div>
-  )}
+
+    {error ? (
+      <p class="text-red-500">Error fetching posts: {error.message}</p>
+    ) : (
+      <div class="space-y-6" id="posts-list">
+        {posts?.map((post) => (
+          <article class="border-b border-gray-300 pb-4" data-tags={post.tags.join(",")}>
+            <a href={`/blog/${post.slug}`} class="block">
+              <h2 class="text-xl font-bold hover:underline">{post.title}</h2>
+            </a>
+            <p class="text-sm text-gray-400">
+              By {post.author} on {new Date(post.created_at).toLocaleDateString()}
+            </p>
+            <p class="mt-2 text-gray-700">{post.content.substring(0, 150)}...</p>
+            <div class="mt-2 flex gap-2">
+              {post.tags.map(tag => (
+                <span class="text-xs bg-gray-300 px-2 py-1 rounded">{tag}</span>
+              ))}
+            </div>
+            <a href={`/blog/${post.slug}`} class="text-blue-500 hover:underline">Read more →</a>
+          </article>
+        ))}
+      </div>
+    )}
   </div>
 </Layout>
+
+<script>
+  document.getElementById("tag-filter").addEventListener("change", (event) => {
+    const selectedTag = event.target.value;
+    document.querySelectorAll("[data-tags]").forEach(post => {
+      post.style.display = selectedTag === "" || post.dataset.tags.includes(selectedTag) ? "block" : "none";
+    });
+  });
+</script>

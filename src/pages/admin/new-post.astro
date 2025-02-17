@@ -27,7 +27,16 @@ import { supabase } from "../../utils/database";
           name="content"
           placeholder="Post Content"
           required
-          class="border p-2 rounded bg-white h-32"></textarea>
+          class="border p-2 rounded bg-white h-32"
+        ></textarea>
+
+        <!-- New tags input -->
+        <input
+          type="text"
+          name="tags"
+          placeholder="Tags (comma separated)"
+          class="border p-2 rounded bg-white"
+        />
 
         <button
           type="submit"
@@ -42,7 +51,6 @@ import { supabase } from "../../utils/database";
   </div>
 </LayoutWithoutTransitions>
 
-<!-- ✅ Move JavaScript to run on the client -->
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("new-post-form");
@@ -56,9 +64,19 @@ import { supabase } from "../../utils/database";
         const title = formData.get("title");
         const content = formData.get("content");
         const author = formData.get("author");
+        
+        // Get the raw tag string from user input
+        const rawTags = formData.get("tags") || "";
+
+        // Convert "tags" to an array (["javascript","supabase","etc"])
+        // Trim whitespace & remove empty entries
+        const tags = rawTags
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t !== "");
 
         if (!title || !content || !author) {
-          statusMessage.textContent = "❌ All fields are required!";
+          statusMessage.textContent = "❌ Title, content, and author are required!";
           statusMessage.classList.add("text-red-500");
           return;
         }
@@ -69,20 +87,27 @@ import { supabase } from "../../utils/database";
           .replace(/^-|-$/g, "");
 
         try {
-          const { error } = await fetch("/api/new-post", {
+          const response = await fetch("/api/new-post", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, content, author, slug }),
-          }).then((res) => res.json());
+            body: JSON.stringify({ title, content, author, slug, tags }),
+          });
+
+          // Expect JSON { success?: boolean, error?: string }
+          const { success, error } = await response.json();
 
           if (error) {
-            statusMessage.textContent = `❌ Error: ${error.message}`;
+            statusMessage.textContent = `❌ Error: ${error}`;
             statusMessage.classList.add("text-red-500");
-          } else {
+            statusMessage.classList.remove("text-green-500");
+          } else if (success) {
             statusMessage.textContent = "✅ Post created successfully!";
             statusMessage.classList.remove("text-red-500");
             statusMessage.classList.add("text-green-500");
             form.reset();
+          } else {
+            statusMessage.textContent = "❌ Something went wrong. No success/no error?";
+            statusMessage.classList.add("text-red-500");
           }
         } catch (err) {
           statusMessage.textContent = "❌ Unexpected error. Try again.";
