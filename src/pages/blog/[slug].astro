@@ -55,7 +55,7 @@ if (supabase) {
         {/* <a href="/blog" class="mb-4 inline-block hover:underline">← Back</a> */}
         <p class="text-sm text-gray-400">
           By {post.author} on {new Date(post.created_at).toLocaleDateString()} ·{" "}
-          {post.views} views ·{" "} {post.likes} likes
+          <span data-views>{post.views}</span> views ·{" "} {post.likes} likes
         </p>
         <div class="mt-4 flex gap-2">
               {post.tags.map(tag => (
@@ -86,11 +86,50 @@ if (supabase) {
 </LayoutWithoutTransitions>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
+    const slug = window.location.pathname.split('/').pop();
     const likeButton = document.getElementById("like-button");
     const likeCount = document.getElementById("like-count");
-    const slug = likeButton.dataset.slug;
+    
+    // Handle views
+    let viewedPosts = [];
+    try {
+      viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '[]');
+    } catch (e) {
+      console.error('Error parsing viewed posts from localStorage', e);
+      viewedPosts = [];
+    }
+    
+    // Only increment views if this post hasn't been viewed before
+    if (!viewedPosts.includes(slug)) {
+      try {
+        const response = await fetch("/api/view-post", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Viewed-Posts": JSON.stringify(viewedPosts)
+          },
+          body: JSON.stringify({ slug })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          // Add this post to viewed posts in localStorage
+          viewedPosts.push(slug);
+          localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+          
+          // Update the view count in the UI if needed
+          const viewCountElement = document.querySelector('[data-views]');
+          if (viewCountElement) {
+            viewCountElement.textContent = result.newViews;
+          }
+        }
+      } catch (error) {
+        console.error("Failed to record view:", error);
+      }
+    }
 
+    // Handle likes (existing code)
     // Check localStorage for liked state
     if (localStorage.getItem(`liked_${slug}`)) {
       likeButton.src = "/images/heart-filled.svg";

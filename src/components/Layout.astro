@@ -2,7 +2,8 @@
 import "../../src/styles/globals.css";
 import Footer from "./Footer.astro";
 import Header from "./Header.astro";
-import { ClientRouter } from 'astro:transitions';
+// Remove ClientRouter since it shows a linter error
+// import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -17,11 +18,11 @@ const { title } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
-    <ClientRouter />
+    <!-- Remove ClientRouter as it's causing an error -->
   </head>
-  <body class="px-4 antialiased text-black bg-white sm:px-8">
+  <body class="px-4 antialiased text-black bg-white sm:px-8 flex flex-col min-h-screen">
     <Header />
-    <main class="w-full max-w-7xl mx-auto grow">
+    <main class="w-full max-w-7xl mx-auto flex-grow">
       <slot />
     </main>
     <Footer />

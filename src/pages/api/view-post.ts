@@ -1,11 +1,15 @@
-import { supabase } from "../../utils/database.ts";
+import { supabase } from "../../utils/database.js";
 
-export const POST = async ({ request }) => {
+export const POST = async ({ request }: { request: Request }) => {
   try {
     const { slug } = await request.json();
 
     if (!slug) {
       return new Response(JSON.stringify({ error: "Missing slug" }), { status: 400 });
+    }
+
+    if (!supabase) {
+      return new Response(JSON.stringify({ error: "Supabase client not initialized" }), { status: 500 });
     }
 
     // ✅ Fetch current views
@@ -25,7 +29,7 @@ export const POST = async ({ request }) => {
     if (viewedPosts.includes(slug)) {
       return new Response(JSON.stringify({ success: true, newViews: data.views }), { status: 200 });
     }
-
+    
     // ✅ Increment view count
     const newViews = data.views + 1;
     const { error: updateError } = await supabase
@@ -38,9 +42,10 @@ export const POST = async ({ request }) => {
     }
 
     return new Response(JSON.stringify({ success: true, newViews }), { status: 200 });
-  } catch (err) {
+  } catch (err: unknown) {
+    const error = err as Error;
     return new Response(
-      JSON.stringify({ error: "Server error", details: err.message }),
+      JSON.stringify({ error: "Server error", details: error.message }),
       { status: 500 }
     );
   }

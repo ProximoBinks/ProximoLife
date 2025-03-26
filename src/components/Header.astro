@@ -11,52 +11,54 @@ function getAdelaideTime() {
 }
 ---
 
-<header
-  class="max-w-7xl mx-auto px-3 md:px-10 mb-16 flex items-center justify-between relative"
->
-  <!-- Left: Adelaide Time -->
+<header>
   <div
-    id="adelaide-time"
-    class="hidden md:block absolute left-9 bg-black text-white py-1 px-2 text-3xl font-bold"
+    class="max-w-7xl mx-auto px-3 md:px-10 mb-16 flex items-center justify-between relative"
   >
-    {getAdelaideTime()}
-  </div>
+    <!-- Left: Adelaide Time -->
+    <div
+      id="adelaide-time"
+      class="hidden md:block absolute left-9 bg-black text-white py-1 px-2 text-3xl font-bold"
+    >
+      {getAdelaideTime()}
+    </div>
 
-  <!-- Center: GIF -->
-  <div class="hidden md:flex justify-center w-full">
-    <a href="/">
-      <img
-        src="/images/nav.gif"
-        alt="Navigation GIF"
-        class="h-[200px] w-[200px]"
-      />
+    <!-- Center: GIF -->
+    <div class="hidden md:flex justify-center w-full">
+      <a href="/">
+        <img
+          src="/images/nav.gif"
+          alt="Navigation GIF"
+          class="h-[200px] w-[200px]"
+        />
+      </a>
+    </div>
+
+    <!-- Right: Proximo Text -->
+    <a
+      href="/"
+      class="mt-4 md:mt-0 md:absolute md:right-9 text-3xl font-bold text-[#5b5bf3]"
+    >
+      proximo
     </a>
+
+    <script>
+      // Update the time dynamically
+      const updateTime = () => {
+        const timeElement = document.getElementById("adelaide-time");
+        if (timeElement) {
+          const adelaideTime = new Date().toLocaleTimeString("en-AU", {
+            timeZone: "Australia/Adelaide",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          });
+          timeElement.textContent = adelaideTime;
+        }
+      };
+
+      setInterval(updateTime, 1000);
+    </script>
   </div>
-
-  <!-- Right: Proximo Text -->
-  <a
-    href="/"
-    class="mt-4 md:mt-0 md:absolute md:right-9 text-3xl font-bold text-[#5b5bf3]"
-  >
-    proximo
-  </a>
-
-  <script>
-    // Update the time dynamically
-    const updateTime = () => {
-      const timeElement = document.getElementById("adelaide-time");
-      if (timeElement) {
-        const adelaideTime = new Date().toLocaleTimeString("en-AU", {
-          timeZone: "Australia/Adelaide",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        });
-        timeElement.textContent = adelaideTime;
-      }
-    };
-
-    setInterval(updateTime, 1000);
-  </script>
 </header>
