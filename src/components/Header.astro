@@ -11,54 +11,47 @@ function getAdelaideTime() {
 }
 ---
 
-<header>
-  <div
-    class="max-w-7xl mx-auto px-3 md:px-10 mb-16 flex items-center justify-between relative"
-  >
-    <!-- Left: Adelaide Time -->
-    <div
-      id="adelaide-time"
-      class="hidden md:block absolute left-9 bg-black text-white py-1 px-2 text-3xl font-bold"
-    >
-      {getAdelaideTime()}
+<header class="w-full max-w-7xl mx-auto py-4">
+  <div class="flex items-center justify-between">
+    <!-- Left section -->
+    <div class="flex items-center">
+      <!-- Put your left-aligned elements here (logo, brand name, etc.) -->
+      <a href="/" class="text-xl font-bold">Proximo</a>
     </div>
 
-    <!-- Center: GIF -->
-    <div class="hidden md:flex justify-center w-full">
-      <a href="/">
-        <img
-          src="/images/nav.gif"
-          alt="Navigation GIF"
-          class="h-[200px] w-[200px]"
-        />
-      </a>
+    <!-- Middle section -->
+    <div class="flex items-center">
+      <!-- Put your center-aligned elements here (main navigation, etc.) -->
+      <nav class="hidden md:flex space-x-6">
+        <a href="/blog" class="hover:text-gray-500">Blog</a>
+        <a href="/contact" class="hover:text-gray-500">Contact</a>
+        <!-- Add more nav links as needed -->
+      </nav>
     </div>
 
-    <!-- Right: Proximo Text -->
-    <a
-      href="/"
-      class="mt-4 md:mt-0 md:absolute md:right-9 text-3xl font-bold text-[#5b5bf3]"
-    >
-      proximo
-    </a>
-
-    <script>
-      // Update the time dynamically
-      const updateTime = () => {
-        const timeElement = document.getElementById("adelaide-time");
-        if (timeElement) {
-          const adelaideTime = new Date().toLocaleTimeString("en-AU", {
-            timeZone: "Australia/Adelaide",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false,
-          });
-          timeElement.textContent = adelaideTime;
-        }
-      };
-
-      setInterval(updateTime, 1000);
-    </script>
+    <!-- Right section -->
+    <div class="flex items-center">
+      <!-- Put your right-aligned elements here (login, theme toggle, etc.) -->
+      <a href="/admin/new-post" class="text-sm px-3 py-2 rounded border border-gray-300 hover:bg-gray-100">New Post</a>
+    </div>
   </div>
 </header>
+
+<script>
+  // Update the time dynamically
+  const updateTime = () => {
+    const timeElement = document.getElementById("adelaide-time");
+    if (timeElement) {
+      const adelaideTime = new Date().toLocaleTimeString("en-AU", {
+        timeZone: "Australia/Adelaide",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      });
+      timeElement.textContent = adelaideTime;
+    }
+  };
+
+  setInterval(updateTime, 1000);
+</script>
