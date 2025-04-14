@@ -7,6 +7,10 @@ export type Post = {
   content: string;
   created_at: string;
   author: string;
+  views: number;
+  likes: number;
+  slug: string;
+  tags: string[];
 };
 
 // Our Database schema definition

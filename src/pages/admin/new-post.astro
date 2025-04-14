@@ -8,50 +8,128 @@ import { supabase } from "../../utils/database";
     <div class="max-w-lg mx-auto p-6 border border-gray-300 rounded-lg shadow">
       <h1 class="text-2xl font-bold mb-4">Create a New Blog Post</h1>
 
-      <form id="new-post-form" method="POST" class="flex flex-col space-y-3">
-        <input
-          type="text"
-          name="title"
-          placeholder="Title"
-          required
-          class="border p-2 rounded bg-white"
-        />
-        <input
-          type="text"
-          name="author"
-          placeholder="Author"
-          required
-          class="border p-2 rounded bg-white"
-        />
-        <textarea
-          name="content"
-          placeholder="Post Content"
-          required
-          class="border p-2 rounded bg-white h-32"
-        ></textarea>
+      <!-- Password protected content -->
+      <div class="post-content hidden">
+        <form id="new-post-form" method="POST" class="flex flex-col space-y-3">
+          <input
+            type="text"
+            name="title"
+            placeholder="Title"
+            required
+            class="border p-2 rounded bg-white"
+          />
+          <input
+            type="text"
+            name="author"
+            placeholder="Author"
+            required
+            class="border p-2 rounded bg-white"
+          />
+          <textarea
+            name="content"
+            placeholder="Post Content"
+            required
+            class="border p-2 rounded bg-white h-32"
+          ></textarea>
 
-        <!-- New tags input -->
-        <input
-          type="text"
-          name="tags"
-          placeholder="Tags (comma separated)"
-          class="border p-2 rounded bg-white"
-        />
+          <!-- New tags input -->
+          <input
+            type="text"
+            name="tags"
+            placeholder="Tags (comma separated)"
+            class="border p-2 rounded bg-white"
+          />
 
-        <button
-          type="submit"
-          class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
-        >
-          Publish Post
-        </button>
+          <button
+            type="submit"
+            class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
+          >
+            Publish Post
+          </button>
 
-        <p id="status-message" class="text-sm mt-2 text-gray-700"></p>
-      </form>
+          <p id="status-message" class="text-sm mt-2 text-gray-700"></p>
+        </form>
+      </div>
     </div>
   </div>
 </LayoutWithoutTransitions>
 
 <script>
+  // Check if password is already stored
+  const storedPassword = localStorage.getItem('blogPassword');
+  const correctPassword = 'elliots#1fan';
+  
+  if (storedPassword === correctPassword) {
+    // Show content if password is correct
+    const content = document.querySelector('.post-content');
+    if (content) {
+      (content as HTMLElement).style.display = 'block';
+    }
+  } else {
+    // Show password input if no correct password is stored
+    const passwordInput = document.createElement('div');
+    passwordInput.innerHTML = `
+      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="m-2 bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+          <h2 class="text-2xl font-bold mb-4">Enter Password</h2>
+          <p class="text-gray-600 mb-4">This page is password protected. Please enter the password to create a new post.</p>
+          <input
+            type="password"
+            id="password-input"
+            class="w-full p-2 border border-gray-300 rounded mb-4"
+            placeholder="Enter password"
+          />
+          <div class="flex gap-4">
+            <a
+              href="/blog"
+              class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300 transition-colors text-center"
+            >
+              ← Back to Blog
+            </a>
+            <button
+              id="submit-password"
+              class="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+            >
+              Submit
+            </button>
+          </div>
+          <p id="error-message" class="text-red-500 mt-2 hidden">Incorrect password</p>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(passwordInput);
+
+    const passwordInputElement = document.getElementById('password-input');
+    const submitButton = document.getElementById('submit-password');
+    const errorMessage = document.getElementById('error-message');
+
+    if (submitButton && passwordInputElement && errorMessage) {
+      submitButton.addEventListener('click', () => {
+        const enteredPassword = (passwordInputElement as HTMLInputElement).value;
+        if (enteredPassword === correctPassword) {
+          localStorage.setItem('blogPassword', enteredPassword);
+          const overlay = document.querySelector('.fixed');
+          if (overlay) {
+            (overlay as HTMLElement).style.display = 'none';
+          }
+          const content = document.querySelector('.post-content');
+          if (content) {
+            (content as HTMLElement).style.display = 'block';
+          }
+        } else {
+          errorMessage.classList.remove('hidden');
+        }
+      });
+
+      passwordInputElement.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          submitButton.click();
+        }
+      });
+    }
+  }
+
+  // Existing form submission code
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("new-post-form");
     const statusMessage = document.getElementById("status-message");

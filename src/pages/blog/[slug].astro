@@ -1,6 +1,7 @@
 ---
 import LayoutWithoutTransitions from "../../components/LayoutWithoutTransitions.astro";
 import { supabase, Post } from "../../utils/database";
+import PasswordInput from "../../components/PasswordInput.astro";
 
 export async function getStaticPaths() {
   if (!supabase) return { paths: [], fallback: false };
@@ -63,18 +64,21 @@ if (supabase) {
               ))}
             </div>
 
-        <div class="prose prose-neutral mt-6" set:html={post.content} />
+        <!-- Password protected content -->
+        <div class="post-content hidden">
+          <div class="prose prose-neutral mt-6" set:html={post.content} />
 
-        <div class="flex items-center mt-4">
-          <img
-            id="like-button"
-            class="w-5 h-5 cursor-pointer transition-opacity hover:opacity-80"
-            src="/images/heart.svg"
-            alt="Like"
-            data-slug={post.slug}
-            data-liked="false"
-          />
-          <span id="like-count" class="ml-1 text-md font-semibold">{post.likes}</span>
+          <div class="flex items-center mt-4">
+            <img
+              id="like-button"
+              class="w-5 h-5 cursor-pointer transition-opacity hover:opacity-80"
+              src="/images/heart.svg"
+              alt="Like"
+              data-slug={post.slug}
+              data-liked="false"
+            />
+            <span id="like-count" class="ml-1 text-md font-semibold">{post.likes}</span>
+          </div>
         </div>
 
         <a href="/blog" class="mt-6 inline-block text-blue-500 hover:underline">
@@ -86,6 +90,80 @@ if (supabase) {
 </LayoutWithoutTransitions>
 
 <script>
+  // Check if password is already stored
+  const storedPassword = localStorage.getItem('blogPassword');
+  const correctPassword = 'elliots#1fan';
+  
+  if (storedPassword === correctPassword) {
+    // Show content if password is correct
+    const content = document.querySelector('.post-content');
+    if (content) {
+      (content as HTMLElement).style.display = 'block';
+    }
+  } else {
+    // Use the PasswordInput component
+    const passwordInput = document.createElement('div');
+    passwordInput.innerHTML = `
+      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="m-2 bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+          <h2 class="text-2xl font-bold mb-4">Enter Password</h2>
+          <p class="text-gray-600 mb-4">This post is password protected. Please enter the password to view the content.</p>
+          <input
+            type="password"
+            id="password-input"
+            class="w-full p-2 border border-gray-300 rounded mb-4"
+            placeholder="Enter password"
+          />
+          <div class="flex gap-4">
+            <a
+              href="/blog"
+              class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300 transition-colors text-center"
+            >
+              ← Back to Blog
+            </a>
+            <button
+              id="submit-password"
+              class="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+            >
+              Submit
+            </button>
+          </div>
+          <p id="error-message" class="text-red-500 mt-2 hidden">Incorrect password</p>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(passwordInput);
+
+    const passwordInputElement = document.getElementById('password-input');
+    const submitButton = document.getElementById('submit-password');
+    const errorMessage = document.getElementById('error-message');
+
+    if (submitButton && passwordInputElement && errorMessage) {
+      submitButton.addEventListener('click', () => {
+        const enteredPassword = (passwordInputElement as HTMLInputElement).value;
+        if (enteredPassword === correctPassword) {
+          localStorage.setItem('blogPassword', enteredPassword);
+          const overlay = document.querySelector('.fixed');
+          if (overlay) {
+            (overlay as HTMLElement).style.display = 'none';
+          }
+          const content = document.querySelector('.post-content');
+          if (content) {
+            (content as HTMLElement).style.display = 'block';
+          }
+        } else {
+          errorMessage.classList.remove('hidden');
+        }
+      });
+
+      passwordInputElement.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          submitButton.click();
+        }
+      });
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", async () => {
     const slug = window.location.pathname.split('/').pop();
     const likeButton = document.getElementById("like-button");
