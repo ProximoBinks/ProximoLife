@@ -3,20 +3,6 @@ import LayoutWithoutTransitions from "../../components/LayoutWithoutTransitions.
 import { supabase, Post } from "../../utils/database";
 import PasswordInput from "../../components/PasswordInput.astro";
 
-export async function getStaticPaths() {
-  if (!supabase) return { paths: [], fallback: false };
-
-  const { data, error } = await supabase.from("posts").select("slug");
-  if (!data || error) return { paths: [], fallback: false };
-
-  return {
-    paths: data.map((row) => ({
-      params: { slug: row.slug },
-    })),
-    fallback: false,
-  };
-}
-
 const { slug } = Astro.params;
 
 let post: Post | null = null;
