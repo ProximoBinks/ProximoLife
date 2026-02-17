@@ -1,70 +1,102 @@
-# Astro Supabase Starter
+# ProximoLife
 
-[Live Demo](https://astro-supabase-starter.netlify.app/)
+A personal blog site built with Astro, Supabase, and Tailwind CSS. Deployed on Netlify.
 
-The Astro Supabase starter demonstrates how to integrate Supabase into an Astro project deployed on Netlify.
+## Features
 
-## Astro Commands
+- **Blog** — Dynamic blog powered by Supabase with post views, likes, tags, and tag filtering
+- **Password-protected posts** — Blog content is gated behind a client-side password prompt
+- **Contact form** — Sends emails via Postmark (Nodemailer)
+- **Admin panel** — Create new blog posts from `/admin/new-post`
+- **macOS-inspired UI** — Homepage styled as a Finder window with draggable icons
 
-All commands are run from the root of the project, from a terminal:
+## Tech Stack
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+- [Astro](https://astro.build/) — SSR framework
+- [Supabase](https://supabase.com/) — Postgres database (posts, views, likes)
+- [Tailwind CSS](https://tailwindcss.com/) — Styling
+- [Nodemailer](https://nodemailer.com/) — Email delivery for the contact form
+- [Netlify](https://netlify.com/) — Hosting & serverless functions
 
-## Deploying to Netlify
-
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/netlify-templates/astro-supabase-starter&fullConfiguration=true)
-
-## Developing Locally
-
-| Prerequisites                                                                |
-| :--------------------------------------------------------------------------- |
-| [Node.js](https://nodejs.org/) v18.14+                                       |
-| (optional) [nvm](https://github.com/nvm-sh/nvm) for Node version management  |
-| [Netlify account](https://netlify.com/)                                      |
-| [Netlify CLI](https://docs.netlify.com/cli/get-started/).                    |
-| [Supabase account](https://supabase.com/)                                    |
-
-### Set up the database
-
-To use this template, you’ll need to set up and seed a new Supabase database.
-
-1. Create a new Supabase project.
-2. Run the SQL commands found in the `supabase/migrations` directory in the Supabase UI.
-3. To seed the database with data, you can import the contents of the `supabase/seed.csv` file in the Supabase UI.
-
-ℹ️ _Note: This template was created to be used with the Supabase extension for Netlify. If you don’t wish to use the Netlify Supabase extension, you will need to set the `SUPABASE_DATABASE_URL` and `SUPABASE_ANON_KEY` environment variables in the `.env` file._
-
-### Install and run locally
-
-1. Clone this repository, then run `npm install` in its root directory.
-
-2. For the starter to have full functionality locally, please ensure you have an up-to-date version of Netlify CLI. Run:
+## Project Structure
 
 ```
-npm install netlify-cli@latest -g
+src/
+├── components/
+│   ├── Layout.astro
+│   ├── LayoutWithoutTransitions.astro
+│   ├── Header.astro
+│   ├── Footer.astro
+│   ├── Post.astro
+│   ├── PasswordInput.astro
+│   └── Alert.astro
+├── pages/
+│   ├── index.astro          # Homepage
+│   ├── blog.astro            # Blog listing
+│   ├── contact.astro         # Contact form
+│   ├── secret.astro          # Secret/archive page
+│   ├── admin/
+│   │   └── new-post.astro    # Admin: create a post
+│   ├── blog/
+│   │   └── [slug].astro      # Individual blog post
+│   └── api/
+│       ├── new-post.ts       # POST — create a post
+│       ├── view-post.ts      # POST — increment views
+│       ├── like-post.ts      # POST — like a post
+│       └── contact.ts        # POST — send contact email
+├── utils/
+│   └── database.ts           # Supabase client & types
+└── styles/
+    └── globals.css
 ```
 
-3. Link your local repository to the deployed Netlify site. This will ensure you're using the same runtime version for both local development and your deployed site.
+## Getting Started
+
+### Prerequisites
+
+- Node.js v18+
+- A [Supabase](https://supabase.com/) project
+- A [Netlify](https://netlify.com/) account (for deployment)
+
+### Install
+
+```bash
+npm install
+```
+
+### Environment Variables
+
+Create a `.env` file in the project root:
 
 ```
-netlify link
+SUPABASE_DATABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
 ```
 
-4. Then, run the Astro.js development server via Netlify CLI:
+### Development
 
+```bash
+npm run dev
 ```
-netlify dev --target-port 4321
+
+Opens at [localhost:4321](http://localhost:4321).
+
+### Build
+
+```bash
+npm run build
 ```
 
-If your browser doesn't navigate to the site automatically, visit [localhost:8888](http://localhost:8888).
+### Preview
 
-## Support
+```bash
+npm run preview
+```
 
-If you get stuck along the way, get help in our [support forums](https://answers.netlify.com/).
+## Deployment
+
+The site deploys to Netlify via the Supabase extension. Push to your connected branch and Netlify handles the rest.
+
+## License
+
+MIT
