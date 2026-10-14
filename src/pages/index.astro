@@ -1,48 +1,45 @@
 ---
 import Layout from "../components/Layout.astro";
+import Window from "../components/Window.astro";
+import PostList from "../components/PostList.astro";
+import { api, database } from "../utils/database";
+import type { FunctionReturnType } from "convex/server";
+let result: FunctionReturnType<typeof api.posts.list> = { posts: [], next: null };
+let unavailable = false;
+try { const { client, secret } = database(); result = await client.query(api.posts.list, { secret, paginationOpts: { numItems: 30, cursor: null } }); }
+catch { unavailable = true; }
+const recent = result.posts.slice(0, 5);
+const count = `${result.posts.length}${result.next ? "+" : ""}`;
+const latest = result.posts[0] && new Date(result.posts[0].created_at).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Adelaide" });
 ---
-
-<Layout title="proximo – home">
-  <div class="min-h-[54vh]">
-    <div class="max-w-[550px] w-auto rounded-lg border border-[#cecdcd] shadow-2xl">
-      <!-- Window Header (Title Bar) -->
-      <div class="h-[50px] bg-[#d1d0d1] rounded-t-lg flex items-center px-4">
-        <!-- macOS-style Buttons -->
-        <div class="flex items-center space-x-2">
-          <div class="w-[12px] h-[12px] bg-[#ff5f56] rounded-full"></div>
-          <div class="w-[12px] h-[12px] bg-[#ffbd2e] rounded-full"></div>
-          <div class="w-[12px] h-[12px] bg-[#27c93f] rounded-full"></div>
-          <a href="/admin/new-post" class="w-[12px] h-[12px] bg-[#d1d0d1] rounded-full"></a>
-        </div>
+<Layout title="proximo – a little corner of the internet">
+  <div class="home">
+    <Window title="About proximo" class="opens">
+      <div class="about-body">
+        <img class="mascot" src="/images/gengar.webp" alt="Gengar, grinning and waving" width="150" height="150" />
+        <h1>proximo</h1>
+        <p class="version">Version 2.0 · Adelaide, AU</p>
+        <p>A digital diary. Notes on what I’m building, what’s been happening, and what I’m still figuring out.</p>
+        <div class="buttons-row"><a class="push default" href="/blog">Read the Diary</a><a class="push" href="/contact">Say Hello</a></div>
+        <dl class="about-specs">
+          <dt>About</dt><dd>code, money &amp; everyday life</dd>
+          <dt>Location</dt><dd>Adelaide, Australia</dd>
+          <dt>Entries</dt><dd>{unavailable ? "–" : count}</dd>
+          {latest && <><dt>Latest</dt><dd>{latest}</dd></>}
+        </dl>
       </div>
-
-      <!-- Window Content (Folder & Files) -->
-      <div class="h-[300px] bg-[#ececec] rounded-b-lg flex flex-col p-6">
-        <!-- Folder Name -->
-        <div class="text-gray-700 font-semibold mb-4">📁 My Folder</div>
-
-        <!-- Files (Navigation Links) -->
-        <div class="flex flex-col space-y-2">
-          <a
-            href="/blog"
-            class="flex items-center text-gray-800 hover:opacity-80"
-          >
-            📄 blog.md
-          </a>
-          <!-- <a
-            href="/about"
-            class="flex items-center text-gray-800 hover:opacity-80"
-          >
-            📄 About.txt
-          </a> -->
-          <a
-            href="/contact"
-            class="flex items-center text-gray-800 hover:opacity-80"
-          >
-            📄 contact.doc
-          </a>
-        </div>
-      </div>
+    </Window>
+    <div class="stack">
+      <Window title="Recent Entries" proxy="/aqua/icons/documentsfolder.png" class="opens" bodyClass="flush">
+        {unavailable ? <div class="list-empty"><h2>The diary couldn’t be loaded.</h2><p>Try again in a moment.</p></div>
+          : recent.length === 0 ? <div class="list-empty"><h2>No entries yet.</h2><p>The first one is on its way.</p></div>
+          : <PostList posts={recent} />}
+        <Fragment slot="status"><span>{recent.length} of {count} items</span><span class="spacer"></span><a href="/blog">Open the diary</a></Fragment>
+      </Window>
+      <aside class="sticky" aria-labelledby="sticky-title">
+        <h2 id="sticky-title">hello!</h2>
+        <p>Welcome to my little corner of the internet. Pull up a chair, read a few entries, and follow along with <a href="/rss.xml">RSS</a>.</p>
+      </aside>
     </div>
   </div>
 </Layout>

@@ -1,17 +1,11 @@
-import { defineConfig } from "astro/config";import netlify from "@astrojs/netlify";
-import tailwind from "@astrojs/tailwind";
-
+import { defineConfig } from "astro/config";
+import netlify from "@astrojs/netlify";
+import tailwind from "@tailwindcss/vite";
 export default defineConfig({
-  markdown: {
-    shikiConfig: {
-      theme: 'github-light-high-contrast',
-    },
-  },
-  integrations: [
-    tailwind({
-      applyBaseStyles: false,
-    }),
-  ],
-  output: 'server',
+  site: "https://proximo.life",
+  output: "server",
   adapter: netlify(),
+  vite: { plugins: [tailwind()] },
+  build: { inlineStylesheets: "always" },
+  devToolbar: { enabled: false },
 });

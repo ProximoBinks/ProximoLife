@@ -1,0 +1,58 @@
+---
+const path = Astro.url.pathname;
+const apps = [
+  { label: "Home", href: "/", icon: "finder" },
+  { label: "Digital Diary", href: "/blog", icon: "textedit" },
+  { label: "Say Hello", href: "/contact", icon: "mail" },
+  { label: "Subscribe via RSS", href: "/rss.xml", icon: "networkglobe" },
+];
+const open = (href: string) => href === "/" ? path === "/" : path.startsWith(href);
+// Hands start at Adelaide's current time so the first paint is already right.
+const [hour, minute] = new Date().toLocaleTimeString("en-AU", { timeZone: "Australia/Adelaide", hour: "numeric", minute: "numeric", hour12: false }).split(":").map(Number);
+---
+<nav class="dock-wrap" aria-label="Dock">
+  <div class="dock" data-dock>
+    {apps.map(app => (
+      <a class:list={["dock-item", { running: open(app.href) }]} href={app.href} aria-current={open(app.href) ? "page" : undefined}>
+        <span class="dock-label">{app.label}</span>
+        <img src={`/aqua/icons/${app.icon}.png`} alt="" width="40" height="40" />
+      </a>
+    ))}
+    <div class="dock-item" role="img" aria-label="Clock showing the time in Adelaide">
+      <span class="dock-label" aria-hidden="true">Adelaide</span>
+      <div class="aqua-clock" style="--clock-face:url(/aqua/clock-face.png)" data-adelaide-clock>
+        <span class="hand hour" style={`--a:${(hour % 12) * 30 + minute * 0.5}deg`}></span>
+        <span class="hand minute" style={`--a:${minute * 6}deg`}></span>
+        <span class="clock-pin"></span>
+      </div>
+    </div>
+    <div class="dock-divider"></div>
+    <a class:list={["dock-item", { running: path === "/secret" }]} href="/secret" aria-current={path === "/secret" ? "page" : undefined}>
+      <span class="dock-label">Trash</span>
+      <img src="/aqua/icons/trashempty.png" alt="" width="40" height="40" />
+    </a>
+  </div>
+</nav>
+<script>
+  // Magnification follows Aqua UI's dock: a Gaussian falloff around the pointer.
+  const BASE = 40, MAX = 74, SIGMA = 58;
+  const dock = document.querySelector<HTMLElement>("[data-dock]");
+  if (dock && matchMedia("(hover: hover) and (pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const items = [...dock.querySelectorAll<HTMLElement>(".dock-item")];
+    let centres: number[] = [], left = 0, frame = 0, x: number | null = null;
+    const measure = () => { const box = dock.getBoundingClientRect(); left = box.left; centres = items.map(item => { const r = item.getBoundingClientRect(); return r.left - box.left + r.width / 2; }); };
+    const apply = () => { frame = 0; if (x == null) return; items.forEach((item, i) => { const d = x! - centres[i]; item.style.width = `${(BASE * (1 + (MAX / BASE - 1) * Math.exp(-(d * d) / (2 * SIGMA * SIGMA)))).toFixed(1)}px`; }); };
+    dock.addEventListener("mouseenter", () => { measure(); dock.classList.add("magnifying"); });
+    dock.addEventListener("mousemove", event => { x = event.clientX - left; if (!frame) frame = requestAnimationFrame(apply); });
+    dock.addEventListener("mouseleave", () => { x = null; dock.classList.remove("magnifying"); items.forEach(item => { item.style.width = ""; }); });
+    items.forEach(item => item.addEventListener("click", () => { item.classList.remove("bounce"); void item.offsetWidth; item.classList.add("bounce"); }));
+  }
+  const clock = document.querySelector<HTMLElement>("[data-adelaide-clock]");
+  const tick = () => {
+    const [h, m] = new Date().toLocaleTimeString("en-AU", { timeZone: "Australia/Adelaide", hour: "numeric", minute: "numeric", hour12: false }).split(":").map(Number);
+    clock?.querySelector<HTMLElement>(".hour")?.style.setProperty("--a", `${(h % 12) * 30 + m * 0.5}deg`);
+    clock?.querySelector<HTMLElement>(".minute")?.style.setProperty("--a", `${m * 6}deg`);
+  };
+  const timer = setInterval(tick, 30000);
+  window.addEventListener("pagehide", () => clearInterval(timer), { once: true });
+</script>

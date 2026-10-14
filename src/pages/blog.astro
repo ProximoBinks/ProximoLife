@@ -1,97 +1,53 @@
 ---
 import Layout from "../components/Layout.astro";
-import { supabase } from "../utils/database";
-
-let posts = null;
-let error = null;
-
-if (supabase) {
-  const { data, error: fetchError } = await supabase
-    .from("posts")
-    .select("title, slug, author, created_at, content, tags")
-    .order("created_at", { ascending: false });
-
-  // ✅ Ensure tags always exist as an array
-  posts =
-    data?.map((post) => ({
-      ...post,
-      tags: post.tags ?? [], // If tags is null, replace it with an empty array
-    })) || [];
-
-  error = fetchError;
-} else {
-  error = new Error("Supabase client not initialized");
-}
+import Window from "../components/Window.astro";
+import PostList from "../components/PostList.astro";
+import { api, database } from "../utils/database";
+import type { FunctionReturnType } from "convex/server";
+let result: FunctionReturnType<typeof api.posts.list> = { posts: [], next: null };
+let unavailable = false;
+try { const { client, secret } = database(); result = await client.query(api.posts.list, { secret, paginationOpts: { numItems: 30, cursor: Astro.url.searchParams.get("before") } }); }
+catch { unavailable = true; Astro.response.status = 503; }
+const tags = [...new Set(result.posts.flatMap(p => p.tags))].sort();
+const publicCount = result.posts.filter(p => p.isPublic).length;
 ---
-
-<Layout title="proximo – blog">
-  <div class="min-h-[54vh]">
-    <h1 class="mb-2 text-4xl font-bold">digital diary</h1>
-    <a href="/" class="mt-2 mb-8 inline-block hover:underline">← Back</a>
-
-    <!-- Tags Filter -->
-    <div>
-      <label for="tag-filter" class="font-bold">filter by tag:</label>
-      <select id="tag-filter" class="px-1 rounded mb-8">
-        <option value="">all</option>
-        {
-          posts
-            ?.flatMap((post) => post.tags)
-            .filter((v, i, a) => v && a.indexOf(v) === i)
-            .map((tag) => <option value={tag}>{tag}</option>)
-        }
-      </select>
+<Layout title="proximo – digital diary" description="Notes on what I’m building, what’s been happening, and what I’m still figuring out.">
+  <Window title="Digital Diary" heading proxy="/aqua/icons/documentsfolder.png" class="opens" bodyClass="flush">
+    <div class="toolbar small" slot="toolbar">
+      <a class="toolbar-item" href="/"><img src="/aqua/icons/finder.png" alt="" width="16" height="16" /><span>Home</span></a>
+      <a class="toolbar-item" href="/rss.xml"><img src="/aqua/icons/networkglobe.png" alt="" width="16" height="16" /><span>Subscribe</span></a>
+      <i class="spacer"></i>
+      {!unavailable && result.posts.length > 0 && <>
+        <span class="tool-field"><label for="tag-filter">Tag</label><span class="select-wrapper"><select id="tag-filter"><option value="">All</option>{tags.map(tag => <option value={tag}>{tag}</option>)}</select></span></span>
+        <span class="tool-field"><label for="search" class="sr-only">Search entries</label><input id="search" type="search" placeholder="Search" autocomplete="off" /></span>
+      </>}
     </div>
-
-    {
-      error ? (
-        <p class="text-red-500">Error fetching posts: {error.message}</p>
-      ) : (
-        <div class="space-y-6" id="posts-list">
-          {posts?.map((post) => (
-            <article
-              class="border-b border-gray-300 pb-4"
-              data-tags={post.tags.join(",")}
-            >
-              <a href={`/blog/${post.slug}`} class="block">
-                <h2 class="text-xl font-bold hover:underline">{post.title}</h2>
-              </a>
-              <p class="mt-2 text-sm text-gray-400">
-                By {post.author} on{" "}
-                {new Date(post.created_at).toLocaleDateString()}
-              </p>
-              <p class="my-2 text-gray-700">
-                {post.content.replace(/<[^>]+>/g, "").substring(0, 150)}...
-              </p>
-              <a
-                href={`/blog/${post.slug}`}
-                class="text-blue-500 hover:underline"
-              >
-                Read more →
-              </a>
-              <div class="mt-4 flex gap-2">
-                {post.tags.map((tag) => (
-                  <span class="text-xs bg-gray-300 px-2 py-1 rounded">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-      )
-    }
-  </div>
+    {unavailable ? <div class="list-empty" role="status"><h2>The diary couldn’t be loaded.</h2><p>Try loading the page again in a moment. <a href="/blog">Try again</a></p></div>
+      : result.posts.length === 0 ? <div class="list-empty"><h2>No entries here yet.</h2><p>There are no posts on this page.</p></div>
+      : <PostList posts={result.posts} filterable />}
+    <Fragment slot="status">
+      <span id="filter-status" role="status">{result.posts.length} items, {publicCount} public</span>
+      <span class="spacer"></span>
+      {Astro.url.searchParams.has("before") && <a href="/blog">Latest entries</a>}
+      {result.next && <a href={`/blog?before=${encodeURIComponent(result.next)}`}>Older entries</a>}
+    </Fragment>
+  </Window>
 </Layout>
-
 <script>
-  document.getElementById("tag-filter").addEventListener("change", (event) => {
-    const selectedTag = event.target.value;
-    document.querySelectorAll("[data-tags]").forEach((post) => {
-      post.style.display =
-        selectedTag === "" || post.dataset.tags.includes(selectedTag)
-          ? "block"
-          : "none";
+  const tag = document.querySelector<HTMLSelectElement>("#tag-filter");
+  const search = document.querySelector<HTMLInputElement>("#search");
+  const status = document.getElementById("filter-status");
+  const initial = status?.textContent ?? "";
+  const filter = () => {
+    const term = search?.value.trim().toLowerCase() ?? "";
+    let shown = 0;
+    document.querySelectorAll<HTMLElement>("tr[data-tags]").forEach(row => {
+      const tags: string[] = JSON.parse(row.dataset.tags ?? "[]");
+      row.hidden = (!!tag?.value && !tags.includes(tag.value)) || (!!term && !row.dataset.title?.includes(term));
+      if (!row.hidden) shown++;
     });
-  });
+    if (status) status.textContent = !tag?.value && !term ? initial : shown ? `${shown} ${shown === 1 ? "item" : "items"} match` : "No entries match";
+  };
+  tag?.addEventListener("change", filter);
+  search?.addEventListener("input", filter);
 </script>

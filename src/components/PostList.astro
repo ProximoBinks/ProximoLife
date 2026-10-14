@@ -1,0 +1,28 @@
+---
+import type { FunctionReturnType } from "convex/server";
+import type { api } from "../utils/database";
+type Post = FunctionReturnType<typeof api.posts.list>["posts"][number];
+interface Props { posts: Post[]; filterable?: boolean }
+const { posts, filterable = false } = Astro.props;
+const date = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "Australia/Adelaide" });
+---
+<table class="list">
+  <thead><tr><th scope="col">Name</th><th scope="col">Date</th><th scope="col" class="col-tags">Tags</th></tr></thead>
+  <tbody>
+    {posts.map(post => (
+      <tr data-tags={filterable ? JSON.stringify(post.tags) : undefined} data-title={filterable ? post.title.toLowerCase() : undefined}>
+        <td>
+          <div class="name">
+            <span class="doc-icon"><img src="/aqua/icons/txt.png" alt="" width="32" height="32" />{!post.isPublic && <img class="badge" src="/aqua/icons/lock.png" alt="" width="11" height="15" />}</span>
+            <div>
+              <a class="title" href={`/blog/${post.slug}`}>{post.title}{!post.isPublic && <span class="sr-only"> (private)</span>}</a>
+              {post.isPublic ? <p class="excerpt">{post.excerpt}</p> : <p class="lock">Private – needs the diary password</p>}
+            </div>
+          </div>
+        </td>
+        <td class="when"><time datetime={post.created_at}>{date(post.created_at)}</time></td>
+        <td class="col-tags"><div class="tags">{post.tags.map(tag => <span class="placard">{tag}</span>)}</div></td>
+      </tr>
+    ))}
+  </tbody>
+</table>

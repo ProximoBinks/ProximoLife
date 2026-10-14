@@ -1,233 +1,89 @@
 ---
-import LayoutWithoutTransitions from "../../components/LayoutWithoutTransitions.astro";
-import { supabase, Post } from "../../utils/database";
-import PasswordInput from "../../components/PasswordInput.astro";
-
-const { slug } = Astro.params;
-
-let post: Post | null = null;
-let error: any = null;
-
-if (supabase) {
-  const { data, error: fetchError } = await supabase
-    .from("posts")
-    .select("*")
-    .eq("slug", slug)
-    .single();
-
-  post = data;
-  error = fetchError;
-
-  // ✅ Increment view count
-//   if (post) {
-//     await supabase
-//       .from("posts")
-//       .update({ views: post.views + 1 })
-//       .eq("slug", slug);
-//   }
-// } else {
-//   error = new Error("Supabase client is not initialized");
-}
+import Layout from "../../components/Layout.astro";
+import Window from "../../components/Window.astro";
+import { Heart, Globe, Lock, LogOut } from "@lucide/astro";
+import { api, database } from "../../utils/database";
+import { authenticated } from "../../utils/auth";
+import sanitize from "sanitize-html";
+import type { FunctionReturnType } from "convex/server";
+let post: FunctionReturnType<typeof api.posts.get> = null;
+let unavailable = false;
+try { const { client, secret } = database(); post = await client.query(api.posts.get, { secret, slug: Astro.params.slug ?? "" }); }
+catch { unavailable = true; }
+const reader = authenticated(Astro.cookies, "reader");
+const admin = authenticated(Astro.cookies, "admin");
+if (unavailable) Astro.response.status = 503;
+else if (!post) Astro.response.status = 404;
+else if (!post.isPublic && !reader) return Astro.redirect(`/login?returnTo=${encodeURIComponent(Astro.url.pathname)}`, 302);
+const date = post && new Date(post.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Adelaide" });
+const excerpt = post?.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
 ---
-
-<LayoutWithoutTransitions title={post ? post.title : "Post Not Found"}>
-  {
-    error || !post ? (
-      <p class="text-red-500">
-        Error loading post: {error?.message || "Not found"}
-      </p>
-    ) : (
-      <article class="max-w-2xl mx-auto p-8 border border-gray-300 rounded-lg shadow">
-        <h1 class="text-3xl font-bold mb-4">{post.title}</h1>
-        {/* <a href="/blog" class="mb-4 inline-block hover:underline">← Back</a> */}
-        <p class="text-sm text-gray-400">
-          By {post.author} on {new Date(post.created_at).toLocaleDateString()} ·{" "}
-          <span data-views>{post.views}</span> views ·{" "} {post.likes} likes
-        </p>
-        <div class="mt-4 flex gap-2">
-              {post.tags.map(tag => (
-                <span class="text-xs bg-gray-300 px-2 py-1 rounded">{tag}</span>
-              ))}
-            </div>
-
-        <!-- Password protected content -->
-        <div class="post-content hidden">
-          <div class="prose prose-neutral mt-6" set:html={post.content} />
-
-          <div class="flex items-center mt-4">
-            <img
-              id="like-button"
-              class="w-5 h-5 cursor-pointer transition-opacity hover:opacity-80"
-              src="/images/heart.svg"
-              alt="Like"
-              data-slug={post.slug}
-              data-liked="false"
-            />
-            <span id="like-count" class="ml-1 text-md font-semibold">{post.likes}</span>
-          </div>
-        </div>
-
-        <a href="/blog" class="mt-6 inline-block text-blue-500 hover:underline">
-          ← Back to Blog
-        </a>
-      </article>
-    )
-  }
-</LayoutWithoutTransitions>
-
+<Layout title={post ? `${post.title} – proximo` : "proximo – entry not found"} description={post?.isPublic ? excerpt : undefined} noindex={!post?.isPublic}>
+  <Window title={post?.title ?? "Digital Diary"} proxy="/aqua/icons/rtf.png" class="opens" bodyClass="paper">
+    <div class="toolbar small" slot="toolbar">
+      <a class="toolbar-item" href="/blog"><img src="/aqua/icons/documentsfolder.png" alt="" width="16" height="16" /><span>Diary</span></a>
+      <i class="spacer"></i>
+      {post && <>
+        <button type="button" class="with-icon like" id="like-button" data-slug={post.slug} aria-pressed="false"><Heart size={13} /><span data-like-label>Like</span></button>
+        {admin && <button type="button" class="with-icon" id="visibility-button" data-slug={post.slug} data-public={String(!!post.isPublic)}>{post.isPublic ? <Lock size={13} /> : <Globe size={13} />}{post.isPublic ? "Make Private" : "Make Public"}</button>}
+        {reader && <form action="/api/logout" method="post"><button class="with-icon" type="submit"><LogOut size={13} />Sign out</button></form>}
+      </>}
+    </div>
+    <article class="document">
+      {unavailable ? <><h1>This entry couldn’t be loaded.</h1><p>Try loading the page again in a moment.</p></>
+        : !post ? <><h1>There’s no entry here.</h1><p>Head back to <a href="/blog">the diary</a> to find a post.</p></>
+        : <>
+          <h1>{post.title}</h1>
+          <p class="meta">By {post.author} · <time datetime={post.created_at}>{date}</time></p>
+          {post.tags.length > 0 && <div class="tags">{post.tags.map(tag => <span class="placard">{tag}</span>)}</div>}
+          <div class="post-content prose prose-neutral" set:html={sanitize(post.content)}></div>
+        </>}
+    </article>
+    <Fragment slot="status">
+      {post ? <>
+        <span><span data-views>{post.views}</span> views</span>
+        <span><span id="like-count">{post.likes}</span> likes</span>
+        <span class="spacer"></span>
+        <span class="placard">{post.isPublic ? "Public" : "Private"}</span>
+        <span class="status" id="post-status" role="status"></span>
+      </> : <a href="/blog">Back to the diary</a>}
+    </Fragment>
+  </Window>
+</Layout>
 <script>
-  // Check if password is already stored
-  const storedPassword = localStorage.getItem('blogPassword');
-  const correctPassword = 'elliots#1fan';
-  
-  if (storedPassword === correctPassword) {
-    // Show content if password is correct
-    const content = document.querySelector('.post-content');
-    if (content) {
-      (content as HTMLElement).style.display = 'block';
-    }
-  } else {
-    // Use the PasswordInput component
-    const passwordInput = document.createElement('div');
-    passwordInput.innerHTML = `
-      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="m-2 bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
-          <h2 class="text-2xl font-bold mb-4">Enter Password</h2>
-          <p class="text-gray-600 mb-4">This post is password protected. Please enter the password to view the content.</p>
-          <input
-            type="password"
-            id="password-input"
-            class="w-full p-2 border border-gray-300 rounded mb-4"
-            placeholder="Enter password"
-          />
-          <div class="flex gap-4">
-            <a
-              href="/blog"
-              class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300 transition-colors text-center"
-            >
-              ← Back to Blog
-            </a>
-            <button
-              id="submit-password"
-              class="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
-            >
-              Submit
-            </button>
-          </div>
-          <p id="error-message" class="text-red-500 mt-2 hidden">Incorrect password</p>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(passwordInput);
-
-    const passwordInputElement = document.getElementById('password-input');
-    const submitButton = document.getElementById('submit-password');
-    const errorMessage = document.getElementById('error-message');
-
-    if (submitButton && passwordInputElement && errorMessage) {
-      submitButton.addEventListener('click', () => {
-        const enteredPassword = (passwordInputElement as HTMLInputElement).value;
-        if (enteredPassword === correctPassword) {
-          localStorage.setItem('blogPassword', enteredPassword);
-          const overlay = document.querySelector('.fixed');
-          if (overlay) {
-            (overlay as HTMLElement).style.display = 'none';
-          }
-          const content = document.querySelector('.post-content');
-          if (content) {
-            (content as HTMLElement).style.display = 'block';
-          }
-        } else {
-          errorMessage.classList.remove('hidden');
-        }
-      });
-
-      passwordInputElement.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          submitButton.click();
-        }
-      });
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", async () => {
-    const slug = window.location.pathname.split('/').pop();
-    const likeButton = document.getElementById("like-button");
-    const likeCount = document.getElementById("like-count");
-    
-    // Handle views
-    let viewedPosts = [];
-    try {
-      viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '[]');
-    } catch (e) {
-      console.error('Error parsing viewed posts from localStorage', e);
-      viewedPosts = [];
-    }
-    
-    // Only increment views if this post hasn't been viewed before
-    if (!viewedPosts.includes(slug)) {
+  const like = document.querySelector<HTMLButtonElement>("#like-button");
+  const status = document.getElementById("post-status");
+  const send = async (path: string, body: object) => {
+    const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Please try again.");
+    return result;
+  };
+  const report = (error: unknown) => { if (status) { status.dataset.error = "true"; status.textContent = error instanceof Error ? error.message : "Something went wrong."; } };
+  if (like) {
+    const slug = like.dataset.slug!;
+    const markLiked = () => { like.setAttribute("aria-pressed", "true"); like.querySelector("[data-like-label]")!.textContent = "Liked"; };
+    try { if (localStorage.getItem(`liked_${slug}`)) markLiked(); } catch {}
+    // Counts are already server-rendered; this request never hides or shifts content.
+    send("/api/view-post", { slug }).then(result => { const views = document.querySelector("[data-views]"); if (views) views.textContent = String(result.newViews); }).catch(() => {});
+    like.addEventListener("click", async () => {
+      if (like.getAttribute("aria-pressed") === "true") return;
+      like.disabled = true;
       try {
-        const response = await fetch("/api/view-post", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "X-Viewed-Posts": JSON.stringify(viewedPosts)
-          },
-          body: JSON.stringify({ slug })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-          // Add this post to viewed posts in localStorage
-          viewedPosts.push(slug);
-          localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
-          
-          // Update the view count in the UI if needed
-          const viewCountElement = document.querySelector('[data-views]');
-          if (viewCountElement) {
-            viewCountElement.textContent = result.newViews;
-          }
-        }
-      } catch (error) {
-        console.error("Failed to record view:", error);
-      }
-    }
-
-    // Handle likes (existing code)
-    // Check localStorage for liked state
-    if (localStorage.getItem(`liked_${slug}`)) {
-      likeButton.src = "/images/heart-filled.svg";
-      likeButton.dataset.liked = "true";
-      likeButton.style.pointerEvents = "none"; // Prevent clicking after liking
-    }
-
-    likeButton.addEventListener("click", async () => {
-      if (likeButton.dataset.liked === "true") return; // Prevent multiple likes
-
-      try {
-        const response = await fetch("/api/like-post", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-          likeCount.textContent = result.newLikes;
-          likeButton.src = "/images/heart-filled.svg";
-          likeButton.dataset.liked = "true";
-
-          // Mark as liked in localStorage
-          localStorage.setItem(`liked_${slug}`, "true");
-
-          // Prevent further clicks
-          likeButton.style.pointerEvents = "none";
-        } else {
-          console.error("Error:", result.error);
-        }
-      } catch (error) {
-        console.error("Failed to like post:", error);
-      }
+        const result = await send("/api/like-post", { slug });
+        document.getElementById("like-count")!.textContent = String(result.newLikes);
+        markLiked();
+        try { localStorage.setItem(`liked_${slug}`, "true"); } catch {}
+      } catch (error) { report(error); }
+      finally { like.disabled = false; }
     });
+  }
+  const visibility = document.querySelector<HTMLButtonElement>("#visibility-button");
+  visibility?.addEventListener("click", async () => {
+    visibility.disabled = true;
+    try {
+      await send("/api/post-visibility", { slug: visibility.dataset.slug, isPublic: visibility.dataset.public !== "true" });
+      location.reload();
+    } catch (error) { report(error); visibility.disabled = false; }
   });
 </script>

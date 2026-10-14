@@ -1,197 +1,36 @@
 ---
-import LayoutWithoutTransitions from "../../components/LayoutWithoutTransitions.astro";
-import { supabase } from "../../utils/database";
+import Layout from "../../components/Layout.astro";
+import Window from "../../components/Window.astro";
+import { LogOut } from "@lucide/astro";
+import { authenticated } from "../../utils/auth";
+if (!authenticated(Astro.cookies, "admin")) return Astro.redirect("/login?returnTo=/admin/new-post", 302);
 ---
-
-<LayoutWithoutTransitions title="New Blog Post">
-  <div class="h-[66vh]">
-    <div class="max-w-lg mx-auto p-6 border border-gray-300 rounded-lg shadow">
-      <h1 class="text-2xl font-bold mb-4">Create a New Blog Post</h1>
-
-      <!-- Password protected content -->
-      <div class="post-content hidden">
-        <form id="new-post-form" method="POST" class="flex flex-col space-y-3">
-          <input
-            type="text"
-            name="title"
-            placeholder="Title"
-            required
-            class="border p-2 rounded bg-white"
-          />
-          <input
-            type="text"
-            name="author"
-            placeholder="Author"
-            required
-            class="border p-2 rounded bg-white"
-          />
-          <textarea
-            name="content"
-            placeholder="Post Content"
-            required
-            class="border p-2 rounded bg-white h-32"
-          ></textarea>
-
-          <!-- New tags input -->
-          <input
-            type="text"
-            name="tags"
-            placeholder="Tags (comma separated)"
-            class="border p-2 rounded bg-white"
-          />
-
-          <button
-            type="submit"
-            class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
-          >
-            Publish Post
-          </button>
-
-          <p id="status-message" class="text-sm mt-2 text-gray-700"></p>
-        </form>
-      </div>
+<Layout title="proximo – write an entry" noindex>
+  <Window title="New Entry" heading proxy="/aqua/icons/rtf.png" class="opens">
+    <div class="toolbar small" slot="toolbar">
+      <a class="toolbar-item" href="/blog"><img src="/aqua/icons/documentsfolder.png" alt="" width="16" height="16" /><span>Diary</span></a>
+      <i class="spacer"></i>
+      <form action="/api/logout" method="post"><button class="with-icon" type="submit"><LogOut size={13} />Sign out</button></form>
     </div>
-  </div>
-</LayoutWithoutTransitions>
-
-<script>
-  // Check if password is already stored
-  const storedPassword = localStorage.getItem('blogPassword');
-  const correctPassword = 'elliots#1fan';
-  
-  if (storedPassword === correctPassword) {
-    // Show content if password is correct
-    const content = document.querySelector('.post-content');
-    if (content) {
-      (content as HTMLElement).style.display = 'block';
-    }
-  } else {
-    // Show password input if no correct password is stored
-    const passwordInput = document.createElement('div');
-    passwordInput.innerHTML = `
-      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="m-2 bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
-          <h2 class="text-2xl font-bold mb-4">Enter Password</h2>
-          <p class="text-gray-600 mb-4">This page is password protected. Please enter the password to create a new post.</p>
-          <input
-            type="password"
-            id="password-input"
-            class="w-full p-2 border border-gray-300 rounded mb-4"
-            placeholder="Enter password"
-          />
-          <div class="flex gap-4">
-            <a
-              href="/blog"
-              class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300 transition-colors text-center"
-            >
-              ← Back to Blog
-            </a>
-            <button
-              id="submit-password"
-              class="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
-            >
-              Submit
-            </button>
-          </div>
-          <p id="error-message" class="text-red-500 mt-2 hidden">Incorrect password</p>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(passwordInput);
-
-    const passwordInputElement = document.getElementById('password-input');
-    const submitButton = document.getElementById('submit-password');
-    const errorMessage = document.getElementById('error-message');
-
-    if (submitButton && passwordInputElement && errorMessage) {
-      submitButton.addEventListener('click', () => {
-        const enteredPassword = (passwordInputElement as HTMLInputElement).value;
-        if (enteredPassword === correctPassword) {
-          localStorage.setItem('blogPassword', enteredPassword);
-          const overlay = document.querySelector('.fixed');
-          if (overlay) {
-            (overlay as HTMLElement).style.display = 'none';
-          }
-          const content = document.querySelector('.post-content');
-          if (content) {
-            (content as HTMLElement).style.display = 'block';
-          }
-        } else {
-          errorMessage.classList.remove('hidden');
-        }
-      });
-
-      passwordInputElement.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          submitButton.click();
-        }
-      });
-    }
-  }
-
-  // Existing form submission code
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("new-post-form");
-    const statusMessage = document.getElementById("status-message");
-
-    if (form) {
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const formData = new FormData(form);
-
-        const title = formData.get("title");
-        const content = formData.get("content");
-        const author = formData.get("author");
-        
-        // Get the raw tag string from user input
-        const rawTags = formData.get("tags") || "";
-
-        // Convert "tags" to an array (["javascript","supabase","etc"])
-        // Trim whitespace & remove empty entries
-        const tags = rawTags
-          .split(",")
-          .map((t) => t.trim())
-          .filter((t) => t !== "");
-
-        if (!title || !content || !author) {
-          statusMessage.textContent = "❌ Title, content, and author are required!";
-          statusMessage.classList.add("text-red-500");
-          return;
-        }
-
-        const slug = title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "");
-
-        try {
-          const response = await fetch("/api/new-post", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, content, author, slug, tags }),
-          });
-
-          // Expect JSON { success?: boolean, error?: string }
-          const { success, error } = await response.json();
-
-          if (error) {
-            statusMessage.textContent = `❌ Error: ${error}`;
-            statusMessage.classList.add("text-red-500");
-            statusMessage.classList.remove("text-green-500");
-          } else if (success) {
-            statusMessage.textContent = "✅ Post created successfully!";
-            statusMessage.classList.remove("text-red-500");
-            statusMessage.classList.add("text-green-500");
-            form.reset();
-          } else {
-            statusMessage.textContent = "❌ Something went wrong. No success/no error?";
-            statusMessage.classList.add("text-red-500");
-          }
-        } catch (err) {
-          statusMessage.textContent = "❌ Unexpected error. Try again.";
-          statusMessage.classList.add("text-red-500");
-        }
-      });
-    }
-  });
+    <form id="new-post-form" class="form-grid" action="/api/new-post" method="post" data-json-form>
+      <label for="title">Title</label><input id="title" name="title" type="text" maxlength="200" required />
+      <label for="slug">URL slug</label><div><input id="slug" name="slug" type="text" maxlength="200" pattern="[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="slug-help" required /><small id="slug-help">{Astro.url.host}/blog/<span id="slug-preview">…</span></small></div>
+      <label for="author">Author</label><input id="author" name="author" type="text" maxlength="100" autocomplete="name" value="proximo" required />
+      <label for="tags">Tags</label><div><input id="tags" name="tags" type="text" placeholder="e.g. coding, life" aria-describedby="tags-help" /><small id="tags-help">Separate with commas. Up to 20 tags, 40 characters each.</small></div>
+      <label for="content" class="top">Post content</label><div><textarea id="content" name="content" rows="14" maxlength="100000" aria-describedby="content-help" required></textarea><small id="content-help">Plain text, or HTML for paragraphs, headings, and links.</small></div>
+      <span></span><div class="field-row"><input id="private" name="private" type="checkbox" /><label for="private">Private – readers need the diary password</label></div>
+      <div class="span buttons-row"><p class="status" role="status" data-status style="flex:1"></p><button type="submit" class="default">Publish Entry</button></div>
+    </form>
+  </Window>
+</Layout>
+<script>import "../../scripts/forms";
+const title = document.querySelector<HTMLInputElement>("#title");
+const slug = document.querySelector<HTMLInputElement>("#slug");
+const preview = document.getElementById("slug-preview");
+let edited = false;
+const showSlug = () => { if (preview) preview.textContent = slug?.value || "…"; };
+slug?.addEventListener("input", () => { edited = true; showSlug(); });
+const updateSlug = () => { if (slug && title && !edited) slug.value = title.value.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); showSlug(); };
+title?.addEventListener("input", updateSlug);
+if (!slug?.value) updateSlug();
 </script>

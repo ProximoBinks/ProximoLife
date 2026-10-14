@@ -28,3 +28,8 @@ pnpm-debug.log*
 
 # Supabase
 supabase/.temp
+
+.env.*
+!.env.example
+playwright-report/
+test-results/

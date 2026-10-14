@@ -1,0 +1,36 @@
+---
+// An Aqua document window. Markup mirrors Aqua UI's <aqua-window> so aqua.css styles it
+// without the web-component runtime. Traffic lights are decorative unless `closable`.
+interface Props {
+  title?: string;
+  heading?: boolean;
+  proxy?: string;
+  status?: string;
+  id?: string;
+  class?: string;
+  bodyClass?: string;
+  inactive?: boolean;
+  closable?: boolean;
+  hidden?: boolean;
+  bare?: boolean;
+}
+const { title = "", heading = false, proxy, status, id, class: className, bodyClass, inactive = false, closable = false, hidden = false, bare = false } = Astro.props;
+const Title = heading ? "h1" : "div";
+const hasStatus = status != null || Astro.slots.has("status");
+---
+<section class:list={["window", className, { inactive }]} id={id} hidden={hidden} aria-label={heading ? undefined : title || undefined}>
+  {!bare && (
+    <div class="title-bar" data-drag-handle>
+      <div class="title-bar-controls" aria-hidden={closable ? undefined : "true"}>
+        <button type="button" aria-label="Close" tabindex={closable ? undefined : -1} data-close={closable ? "" : undefined}></button>
+        <button type="button" aria-label="Minimize" tabindex="-1" aria-hidden="true"></button>
+        <button type="button" aria-label="Zoom" tabindex="-1" aria-hidden="true"></button>
+      </div>
+      <Title class="title-bar-text">{proxy && <img class="proxy" src={proxy} alt="" width="16" height="16" />}{title}</Title>
+      <div style="width:49px;flex:0 0 auto"></div>
+    </div>
+  )}
+  <slot name="toolbar" />
+  <div class:list={["window-body", bodyClass]}><slot /></div>
+  {hasStatus && <div class="status-bar"><slot name="status">{status}</slot></div>}
+</section>

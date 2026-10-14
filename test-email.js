@@ -1,26 +1,7 @@
 import nodemailer from "nodemailer";
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.postmarkapp.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "17d205c6-8892-4a98-8b18-34c8525411c0", 
-    pass: "17d205c6-8892-4a98-8b18-34c8525411c0", 
-  },
-});
-
-const mailOptions = {
-  from: '"proximo" <elliot@proximo.life>',
-  to: "elliot@proximo.life",
-  subject: "Test Email",
-  text: "This is a test email from Postmark.",
-};
-
-transporter.sendMail(mailOptions, (error, info) => {
-  if (error) {
-    console.error("Error:", error);
-  } else {
-    console.log("Email sent:", info.response);
-  }
-});
+const token = process.env.POSTMARK_SERVER_TOKEN;
+const recipient = process.env.CONTACT_EMAIL;
+if (!token || !recipient) throw new Error("Set POSTMARK_SERVER_TOKEN and CONTACT_EMAIL first");
+const transport = nodemailer.createTransport({ host: "smtp.postmarkapp.com", port: 587, secure: false, requireTLS: true, auth: { user: token, pass: token } });
+await transport.sendMail({ from: recipient, to: recipient, subject: "Proximo email test", text: "Email delivery is working." });
+console.log("Test message sent.");

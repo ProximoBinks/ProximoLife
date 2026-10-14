@@ -1,30 +1,52 @@
 ---
-import "../../src/styles/globals.css";
-import Footer from "./Footer.astro";
-import Header from "./Header.astro";
-// Remove ClientRouter since it shows a linter error
-// import { ClientRouter } from 'astro:transitions';
-
-interface Props {
-  title: string;
-}
-
-const { title } = Astro.props;
+import "../styles/globals.css";
+import MenuBar from "./MenuBar.astro";
+import Dock from "./Dock.astro";
+interface Props { title: string; description?: string; noindex?: boolean }
+const { title, description = "A little corner of the internet. A diary of what I’m building, what’s happening, and what I’m still figuring out.", noindex = false } = Astro.props;
+const path = Astro.url.pathname;
+const icons = [
+  { label: "proximo HD", href: "/", icon: "harddisk" },
+  { label: "Diary", href: "/blog", icon: "documentsfolder" },
+  { label: "The Archive", href: "/secret", icon: "pictures" },
+];
 ---
-
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
-    <!-- Remove ClientRouter as it's causing an error -->
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#3a5a9a" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="alternate" type="application/rss+xml" title="proximo – digital diary" href="/rss.xml" />
+    <!-- Aqua UI (MIT, Will Meyers): served as a cached file, never edited. -->
+    <link rel="stylesheet" href="/aqua/aqua.css" />
+    <!-- aqua.css embeds Lucida Grande as data URIs, which only decode after first paint and
+         reflow the text. The same faces as preloaded files are ready before then. -->
+    <link rel="preload" href="/aqua/fonts/lucida-grande-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/aqua/fonts/lucida-grande-700.woff2" as="font" type="font/woff2" crossorigin />
+    <style is:inline>
+      @font-face { font-family: "Lucida Grande"; font-weight: 400; font-style: normal; font-display: block; src: url("/aqua/fonts/lucida-grande-400.woff2") format("woff2"); }
+      @font-face { font-family: "Lucida Grande"; font-weight: 700; font-style: normal; font-display: block; src: url("/aqua/fonts/lucida-grande-700.woff2") format("woff2"); }
+    </style>
   </head>
-  <body class="px-4 antialiased text-black bg-white sm:px-8 flex flex-col min-h-screen">
-    <Header />
-    <main class="w-full max-w-7xl mx-auto flex-grow">
-      <slot />
-    </main>
-    <Footer />
+  <body class="aqua">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <MenuBar />
+    <nav class="desktop-icons" aria-label="Desktop">
+      {icons.map(item => <a class="desk-link" href={item.href} aria-current={path === item.href ? "page" : undefined}><img src={`/aqua/icons/${item.icon}.png`} alt="" width="52" height="52" /><span>{item.label}</span></a>)}
+    </nav>
+    <main id="main" class="desk" tabindex="-1"><slot /></main>
+    <p class="site-credit">© {new Date().getFullYear()} proximo · <!-- made with <a href="https://astro.build" rel="noopener">astro</a> &amp; <a href="https://github.com/willmeyers/aqua-ui" rel="noopener">aqua ui</a> -->built by <a href="https://hypertools.dev" target="_blank" rel="noopener">hypertools</a></p>
+    <Dock />
   </body>
 </html>

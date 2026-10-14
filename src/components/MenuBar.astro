@@ -1,0 +1,39 @@
+---
+const path = Astro.url.pathname;
+const clock = { timeZone: "Australia/Adelaide", weekday: "short", hour: "numeric", minute: "2-digit", hour12: true } as const;
+const time = new Date().toLocaleString("en-AU", clock);
+const current = (href: string) => (href === "/" ? path === "/" : path.startsWith(href)) ? "page" : undefined;
+---
+<nav class="menubar" aria-label="Menu bar">
+  <details class="apple" data-menubar-menu>
+    <summary aria-label="proximo menu"><img src="/favicon-16.png" srcset="/favicon-16.png 1x, /favicon-32.png 2x" alt="" width="16" height="16" /></summary>
+    <ul class="menu">
+      <li class="about"><img src="/images/gengar-64.png" alt="" width="40" height="40" /><strong>proximo</strong><span>a little corner of the internet</span></li>
+      <li class="separator"></li>
+      <li><a href="/">Home</a></li>
+      <li><a href="/blog">Digital Diary</a></li>
+      <li><a href="/contact">Say Hello…</a></li>
+      <li class="separator"></li>
+      <li><a href="/rss.xml">Subscribe via RSS</a></li>
+      <li><a href="/secret">The Archive…</a></li>
+      <li class="separator"></li>
+      <li><a href="/admin/new-post">Write an Entry…</a></li>
+    </ul>
+  </details>
+  <a class="app-name" href="/" data-menu aria-current={current("/")}>proximo</a>
+  <a class="menu-title" href="/blog" data-menu aria-current={current("/blog")}>Diary</a>
+  <a class="menu-title" href="/contact" data-menu aria-current={current("/contact")}>Contact</a>
+  <a class="menu-title optional" href="/rss.xml" data-menu>RSS</a>
+  <span class="spacer"></span>
+  <span class="clock-text"><span class="city">Adelaide</span><time id="menu-clock">{time}</time></span>
+</nav>
+<script>
+  const menus = document.querySelectorAll<HTMLDetailsElement>("[data-menubar-menu]");
+  document.addEventListener("click", event => menus.forEach(menu => { if (!menu.contains(event.target as Node)) menu.open = false; }));
+  document.addEventListener("keydown", event => { if (event.key === "Escape") menus.forEach(menu => { if (menu.open) { menu.open = false; menu.querySelector("summary")?.focus(); } }); });
+  const clock = document.getElementById("menu-clock");
+  const tick = () => { if (clock) clock.textContent = new Date().toLocaleString("en-AU", { timeZone: "Australia/Adelaide", weekday: "short", hour: "numeric", minute: "2-digit", hour12: true }); };
+  tick();
+  const timer = setInterval(tick, 10000);
+  window.addEventListener("pagehide", () => clearInterval(timer), { once: true });
+</script>

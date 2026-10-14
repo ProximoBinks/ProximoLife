@@ -1,0 +1,32 @@
+---
+import Layout from "../components/Layout.astro";
+import Window from "../components/Window.astro";
+import { safeReturn } from "../utils/auth";
+const returnTo = safeReturn(Astro.url.searchParams.get("returnTo") ?? "");
+const admin = returnTo.startsWith("/admin");
+const messages: Record<string,string> = { invalid: "That password isn’t right. Try again.", rate: "Too many attempts. Please try again in 15 minutes.", unavailable: "Sign-in is temporarily unavailable. Please try again later." };
+const error = messages[Astro.url.searchParams.get("error") ?? ""];
+---
+<Layout title={`proximo – ${admin ? "writer" : "diary"} access`} noindex>
+  <div class="narrow">
+    <Window title={admin ? "New Entry" : "Digital Diary"} proxy={`/aqua/icons/${admin ? "rtf" : "documentsfolder"}.png`} class="sheet-window opens" bodyClass="flush">
+      <div class="redacted" aria-hidden="true">{Array.from({ length: 14 }, () => <i></i>)}</div>
+      <div class="aqua-sheet-host" data-open>
+        <form class="aqua-sheet" action="/api/login" method="post">
+          <div class="aqua-alert">
+            <div class="icon"><img src="/aqua/icons/keychainaccess.png" alt="" width="64" height="64" /></div>
+            <div class="body">
+              <h1 class="message">{admin ? "Sign in to write an entry." : "This entry is private."}</h1>
+              <p class="informative">{admin ? "Enter your writer password to add something new to the diary." : "Enter the diary password to read it. You’ll stay signed in for a day."}</p>
+              <input type="hidden" name="returnTo" value={returnTo} />
+              <label for="password" class="sr-only">Password</label>
+              <input id="password" name="password" type="password" placeholder="Password" autocomplete="current-password" maxlength="256" required autofocus aria-describedby={error ? "login-error" : undefined} />
+              {error && <p id="login-error" role="alert" class="error">{error}</p>}
+              <div class="buttons"><a class="push" href="/blog">Cancel</a><button class="default pulsing" type="submit">Continue</button></div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </Window>
+  </div>
+</Layout>

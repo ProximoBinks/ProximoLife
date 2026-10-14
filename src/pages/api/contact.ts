@@ -1,52 +1,18 @@
-// src/pages/api/contact.ts
-
 import type { APIRoute } from "astro";
 import nodemailer from "nodemailer";
-
-/** 
- * This function handles POST requests to /api/contact.
- * The "APIRoute" type is the typical pattern in Astro for server endpoints.
- */
-export const POST: APIRoute = async ({ request }) => {
+import { allowRequest, json, readBody, sameOrigin } from "../../utils/http";
+export const POST: APIRoute = async (context) => {
+  if (!sameOrigin(context.request)) return json({ error: "Forbidden" }, 403);
   try {
-    // 1. Parse incoming JSON
-    const { name, email, message } = await request.json();
-
-    // 2. Create nodemailer transporter (using Postmark)
-    const transporter = nodemailer.createTransport({
-      host: "smtp.postmarkapp.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: "17d205c6-8892-4a98-8b18-34c8525411c0",
-        pass: "17d205c6-8892-4a98-8b18-34c8525411c0",
-      },
-    });
-
-    // 3. Define mail options
-    const mailOptions = {
-      from: `"Proximo" <elliot@proximo.life>`,
-      to: "elliot@proximo.life",
-      subject: "New Contact Form Submission",
-      text: `
-        From: ${name} <${email}>
-        Message: ${message}
-      `,
-    };
-
-    // 4. Send email
-    await transporter.sendMail(mailOptions);
-
-    // 5. Return a success response
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("Error sending email:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
+    const { name, email, message, website } = await readBody(context.request);
+    if (website) return json({ success: true });
+    if (typeof name !== "string" || !name.trim() || name.length > 100 || typeof email !== "string" || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || typeof message !== "string" || !message.trim() || message.length > 10000) return json({ error: "Enter a name, valid email address, and message (up to 10,000 characters)." }, 400);
+    if (!await allowRequest(context, "contact", 5)) return json({ error: "Too many messages. Please try again in 15 minutes." }, 429);
+    const token = import.meta.env.POSTMARK_SERVER_TOKEN;
+    const recipient = import.meta.env.CONTACT_EMAIL;
+    if (!token || !recipient) return json({ error: "Email is temporarily unavailable. Please try again later." }, 503);
+    const transporter = nodemailer.createTransport({ host: "smtp.postmarkapp.com", port: 587, secure: false, requireTLS: true, auth: { user: token, pass: token }, connectionTimeout: 10000, socketTimeout: 15000 });
+    await transporter.sendMail({ from: recipient, to: recipient, replyTo: email, subject: "New message from proximo.life", text: `From: ${name} <${email}>\n\n${message}` });
+    return json({ success: true });
+  } catch { return json({ error: "Your message could not be sent. Please try again." }, 503); }
 };

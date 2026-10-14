@@ -1,0 +1,19 @@
+---
+import Layout from "../components/Layout.astro";
+import Window from "../components/Window.astro";
+Astro.response.status = 404;
+---
+<Layout title="proximo – not found" noindex>
+  <div class="narrow">
+    <Window bare class="opens" bodyClass="flush">
+      <div class="aqua-alert">
+        <div class="icon"><img src="/aqua/icons/alertcaution.png" alt="" width="64" height="64" /></div>
+        <div class="body">
+          <h1 class="message">The page “{Astro.url.pathname}” can’t be found.</h1>
+          <p class="informative">It may have been moved, renamed, or put in the Trash. Check the address, or head back to the desktop.</p>
+          <div class="buttons"><a class="push" href="/blog">Open the Diary</a><a class="push default" href="/">OK</a></div>
+        </div>
+      </div>
+    </Window>
+  </div>
+</Layout>
