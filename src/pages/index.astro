@@ -12,7 +12,7 @@ const recent = result.posts.slice(0, 5);
 const count = `${result.posts.length}${result.next ? "+" : ""}`;
 const latest = result.posts[0] && new Date(result.posts[0].created_at).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Adelaide" });
 ---
-<Layout title="proximo – a little corner of the internet">
+<Layout title="proximo – a little corner of the internet" jsonLd={{ "@context": "https://schema.org", "@type": "Blog", name: "proximo", url: Astro.url.origin, inLanguage: "en-AU", author: { "@type": "Person", name: "proximo" } }}>
   <div class="home">
     <Window title="About proximo" class="opens">
       <div class="about-body">

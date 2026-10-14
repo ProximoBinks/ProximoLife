@@ -16,9 +16,13 @@ if (unavailable) Astro.response.status = 503;
 else if (!post) Astro.response.status = 404;
 else if (!post.isPublic && !reader) return Astro.redirect(`/login?returnTo=${encodeURIComponent(Astro.url.pathname)}`, 302);
 const date = post && new Date(post.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Adelaide" });
-const excerpt = post?.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
+// Share text is the post's own opening, cut at a word boundary. Private entries never expose it.
+const plain = post?.content.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "’").replace(/&quot;/g, '"').replace(/\s+/g, " ").trim() ?? "";
+const excerpt = plain.length > 158 ? `${plain.slice(0, 158).replace(/\s+\S*$/, "")}…` : plain;
+const description = post?.isPublic ? excerpt : "A private entry in proximo’s diary.";
+const jsonLd = post?.isPublic ? { "@context": "https://schema.org", "@type": "BlogPosting", headline: post.title, description: excerpt, datePublished: post.created_at, author: { "@type": "Person", name: post.author }, keywords: post.tags.join(", "), inLanguage: "en-AU", mainEntityOfPage: new URL(Astro.url.pathname, Astro.url.origin).href, image: new URL("/og-image.jpg", Astro.url.origin).href } : undefined;
 ---
-<Layout title={post ? `${post.title} – proximo` : "proximo – entry not found"} description={post?.isPublic ? excerpt : undefined} noindex={!post?.isPublic}>
+<Layout title={post ? `${post.title} – proximo` : "proximo – entry not found"} description={description} noindex={!post?.isPublic} article={post?.isPublic ? { published: post.created_at, tags: post.tags } : undefined} jsonLd={jsonLd}>
   <Window title={post?.title ?? "Digital Diary"} proxy="/aqua/icons/rtf.png" class="opens" bodyClass="paper">
     <div class="toolbar small" slot="toolbar">
       <a class="toolbar-item" href="/blog"><img src="/aqua/icons/documentsfolder.png" alt="" width="16" height="16" /><span>Diary</span></a>

@@ -11,7 +11,7 @@ catch { unavailable = true; Astro.response.status = 503; }
 const tags = [...new Set(result.posts.flatMap(p => p.tags))].sort();
 const publicCount = result.posts.filter(p => p.isPublic).length;
 ---
-<Layout title="proximo – digital diary" description="Notes on what I’m building, what’s been happening, and what I’m still figuring out.">
+<Layout title="proximo – digital diary" description="Every entry in my diary, newest first. I write about coding projects, money, health, learning Japanese and whatever else I’ve been thinking about.">
   <Window title="Digital Diary" heading proxy="/aqua/icons/documentsfolder.png" class="opens" bodyClass="flush">
     <div class="toolbar small" slot="toolbar">
       <a class="toolbar-item" href="/"><img src="/aqua/icons/finder.png" alt="" width="16" height="16" /><span>Home</span></a>

@@ -2,8 +2,20 @@
 import "../styles/globals.css";
 import MenuBar from "./MenuBar.astro";
 import Dock from "./Dock.astro";
-interface Props { title: string; description?: string; noindex?: boolean }
-const { title, description = "A little corner of the internet. A diary of what I’m building, what’s happening, and what I’m still figuring out.", noindex = false } = Astro.props;
+interface Props {
+  title: string;
+  description?: string;
+  noindex?: boolean;
+  /** Set on diary entries: switches the share card to an article with its date and tags. */
+  article?: { published: string; tags: string[] };
+  jsonLd?: Record<string, unknown>;
+}
+const SITE_DESCRIPTION = "proximo is my online diary from Adelaide. I write about the things I’m building, money, health and everyday life, mostly so I can look back on it.";
+const { title, description = SITE_DESCRIPTION, noindex = false, article, jsonLd } = Astro.props;
+// Absolute URLs come from the request, so they stay right on the Netlify address and on a custom domain.
+const canonical = new URL(Astro.url.pathname, Astro.url.origin).href;
+const image = new URL("/og-image.jpg", Astro.url.origin).href;
+const imageAlt = "An Aqua-style window titled About proximo, with Gengar waving beside the words proximo, a little corner of the internet.";
 const path = Astro.url.pathname;
 const icons = [
   { label: "proximo HD", href: "/", icon: "harddisk" },
@@ -18,11 +30,29 @@ const icons = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="author" content="proximo" />
     <meta name="theme-color" content="#3a5a9a" />
+    {noindex ? <meta name="robots" content="noindex, nofollow" /> : <link rel="canonical" href={canonical} />}
+    <meta property="og:site_name" content="proximo" />
+    <meta property="og:locale" content="en_AU" />
+    <meta property="og:type" content={article ? "article" : "website"} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
+    {article && <meta property="article:published_time" content={article.published} />}
+    {article && <meta property="article:author" content="proximo" />}
+    {article?.tags.map(tag => <meta property="article:tag" content={tag} />)}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, "\\u003c")} />}
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
     <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />

@@ -9,7 +9,7 @@ export const GET: APIRoute = async ({ url }) => {
     const { client, secret } = database();
     const { posts } = await client.query(api.posts.list, { secret, paginationOpts: { numItems: 30, cursor: null } });
     const items = posts.filter(post => post.isPublic).map(post => `<item><title>${escape(post.title)}</title><link>${origin}/blog/${post.slug}</link><guid>${origin}/blog/${post.slug}</guid><pubDate>${new Date(post.created_at).toUTCString()}</pubDate><description>${escape(post.excerpt ?? "")}</description>${post.tags.map(tag => `<category>${escape(tag)}</category>`).join("")}</item>`).join("");
-    const xml = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>proximo – digital diary</title><link>${origin}/blog</link><description>Notes on what I’m building, what’s been happening, and what I’m still figuring out.</description><language>en-au</language>${items}</channel></rss>`;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>proximo – digital diary</title><link>${origin}/blog</link><description>proximo is my online diary from Adelaide. I write about the things I’m building, money, health and everyday life, mostly so I can look back on it.</description><language>en-au</language>${items}</channel></rss>`;
     return new Response(xml, { headers: { "Content-Type": "application/rss+xml; charset=utf-8", "Cache-Control": "public, max-age=600" } });
   } catch { return new Response("The feed is temporarily unavailable.", { status: 503 }); }
 };
