@@ -1,6 +1,7 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { v, ConvexError } from "convex/values";
+import type { Doc } from "./_generated/dataModel";
 function authorize(secret: string) {
   if (!process.env.CONVEX_SERVER_SECRET || secret !== process.env.CONVEX_SERVER_SECRET) throw new ConvexError("Unauthorized");
 }
@@ -13,12 +14,25 @@ function excerpt(html: string) {
   const text = html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "’").replace(/&quot;/g, '"').replace(/\s+/g, " ").trim();
   return text.length > 220 ? `${text.slice(0, 220).replace(/\s+\S*$/, "")}…` : text;
 }
+const MAX_PINNED = 10;
+function summary({ content, ...post }: Doc<"posts">) {
+  return { ...post, excerpt: post.isPublic ? excerpt(content) : null };
+}
 export const list = query({
   args: { secret: v.string(), paginationOpts: paginationOptsValidator },
   handler: async (ctx, { secret, paginationOpts }) => {
     authorize(secret);
     const result = await ctx.db.query("posts").withIndex("by_date").order("desc").paginate({ ...paginationOpts, numItems: Math.min(paginationOpts.numItems, 30) });
-    return { posts: result.page.map(({ content, ...post }) => ({ ...post, excerpt: post.isPublic ? excerpt(content) : null })), next: result.isDone ? null : result.continueCursor };
+    return { posts: result.page.map(summary), next: result.isDone ? null : result.continueCursor };
+  },
+});
+// Pinned entries, most recently pinned first. `list` stays chronological and still includes them.
+export const pinned = query({
+  args: { secret: v.string() },
+  handler: async (ctx, { secret }) => {
+    authorize(secret);
+    const posts = await ctx.db.query("posts").withIndex("by_pinned", q => q.gt("pinnedAt", 0)).order("desc").take(MAX_PINNED);
+    return posts.map(summary);
   },
 });
 export const get = query({ args: { secret: v.string(), slug: v.string() }, handler: async (ctx, { secret, slug }) => {
@@ -49,6 +63,14 @@ export const setVisibility = mutation({ args: { secret: v.string(), slug: v.stri
   await ctx.db.patch(post._id, { isPublic });
   return isPublic;
 }});
+export const setPinned = mutation({ args: { secret: v.string(), slug: v.string(), pinned: v.boolean() }, handler: async (ctx, { secret, slug, pinned }) => {
+  authorize(secret);
+  const post = await ctx.db.query("posts").withIndex("by_slug", q => q.eq("slug", slug)).unique();
+  if (!post) throw new ConvexError("Post not found");
+  if (pinned && !post.pinnedAt && (await ctx.db.query("posts").withIndex("by_pinned", q => q.gt("pinnedAt", 0)).take(MAX_PINNED)).length >= MAX_PINNED) throw new ConvexError(`You can pin up to ${MAX_PINNED} entries. Unpin one first.`);
+  await ctx.db.patch(post._id, { pinnedAt: pinned ? Date.now() : undefined });
+  return pinned;
+}});
 export const rateLimit = mutation({ args: { secret: v.string(), key: v.string(), maximum: v.number(), windowMs: v.number() }, handler: async (ctx, { secret, key, maximum, windowMs }) => {
   authorize(secret);
   const now = Date.now();
@@ -69,6 +91,23 @@ export const importPosts = internalMutation({ args: { posts: v.array(v.object({ 
   }
   return { imported, skipped: posts.length - imported };
 }});
+
+// CLI-only edits to explicitly approved diary dates and prose.
+export const editDatedEntries = internalMutation({
+  args: { updates: v.array(v.object({ slug: v.string(), expectedTitle: v.string(), expectedContent: v.string(), expectedDate: v.string(), title: v.string(), content: v.string(), created_at: v.string() })) },
+  handler: async (ctx, { updates }) => {
+    if (updates.length > 50 || new Set(updates.map(p => p.slug)).size !== updates.length) throw new ConvexError("Invalid edit batch");
+    for (const update of updates) {
+      if (!Number.isFinite(Date.parse(update.created_at)) || new Date(update.created_at).toISOString() !== update.created_at) throw new ConvexError("Invalid date");
+      const post = await ctx.db.query("posts").withIndex("by_slug", q => q.eq("slug", update.slug)).unique();
+      if (!post) throw new ConvexError("Post not found");
+      if (post.title !== update.expectedTitle || post.content !== update.expectedContent || post.created_at !== update.expectedDate) throw new ConvexError("Post changed since review");
+      validate({ ...post, title: update.title, content: update.content });
+      await ctx.db.patch(post._id, { title: update.title, content: update.content, created_at: update.created_at });
+    }
+    return { updated: updates.length };
+  },
+});
 
 // Editorial updates are CLI-only and can change only title/content.
 // Comparing the original text prevents overwriting edits made after review.

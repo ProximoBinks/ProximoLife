@@ -129,6 +129,10 @@ h1.title-bar-text { margin: 0; }
 .aqua .list tbody tr:is(:hover, :focus-within) :is(.title, .excerpt, .when, .lock) { color: #fff; }
 .aqua .list tbody tr:is(:hover, :focus-within) .placard { color: #222; }
 .aqua .list .title:focus-visible { outline: none; }
+.aqua .list .group-row th { height: auto; padding: 7px 10px 3px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #555; background: #f4f4f4; box-shadow: inset 0 -1px 0 #d6d6d6; }
+.aqua .list tbody tr.group-row:hover { background: none; }
+.list .title .pin { display: inline-block; margin-right: 5px; vertical-align: -1px; color: #b23a3a; transform: rotate(35deg); }
+.aqua .list tbody tr:is(:hover, :focus-within) .title .pin { color: #fff; }
 .tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .aqua .list td.col-tags { min-width: 150px; }
 .aqua .placard { color: #222; }

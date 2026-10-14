@@ -69,6 +69,18 @@ test("editorial rewrites change only title and content and reject stale text ato
   expect((await t.query(api.posts.get, { secret, slug: "second-post" }))?.title).toBe(post.title);
 });
 
+test("dated editorial updates preserve metadata and reject stale dates", async () => {
+  const t = convexTest(schema, modules);
+  const source = { ...post, created_at: "2026-09-23T00:00:00.000Z", likes: 12, views: 29, isPublic: true };
+  await t.mutation(internal.posts.importPosts, { posts: [source] });
+  const before = (await t.query(api.posts.get, { secret, slug: post.slug }))!;
+  const update = { slug: post.slug, expectedTitle: post.title, expectedContent: post.content, expectedDate: source.created_at, title: "Diary", content: "<p>Today</p>", created_at: "2026-09-25T00:00:00.000Z" };
+  await t.mutation(internal.posts.editDatedEntries, { updates: [update] });
+  expect(await t.query(api.posts.get, { secret, slug: post.slug })).toEqual({ ...before, title: update.title, content: update.content, created_at: update.created_at });
+  await expect(t.mutation(internal.posts.editDatedEntries, { updates: [{ ...update, expectedTitle: update.title, expectedContent: update.content }] })).rejects.toThrow("Post changed since review");
+  await expect(t.mutation(internal.posts.editDatedEntries, { updates: [{ ...update, expectedTitle: update.title, expectedContent: update.content, expectedDate: update.created_at, created_at: "invalid" }] })).rejects.toThrow("Invalid date");
+});
+
 test("private posts hide excerpts and reject anonymous interactions until made public", async () => {
   const t = convexTest(schema, modules);
   await t.mutation(api.posts.create, { secret, ...post, isPublic: false });
@@ -82,4 +94,25 @@ test("private posts hide excerpts and reject anonymous interactions until made p
   expect(await t.mutation(api.posts.setVisibility, { secret, slug: post.slug, isPublic: true })).toBe(true);
   expect((await list()).find(p => p.slug === post.slug)?.excerpt).toBe("Private words");
   expect(await t.mutation(api.posts.interact, { secret, slug: post.slug, visitor, kind: "view", reader: false })).toBe(1);
+});
+
+test("pinned entries come back most recently pinned first, capped, while list stays chronological", async () => {
+  vi.useFakeTimers();
+  try {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.posts.importPosts, { posts: Array.from({ length: 12 }, (_, i) => ({ ...post, slug: `entry-${i}`, created_at: `2024-01-${String(i + 1).padStart(2, "0")}T00:00:00.000Z`, likes: 0, views: 0, isPublic: true })) });
+    await expect(t.mutation(api.posts.setPinned, { secret: "wrong", slug: "entry-0", pinned: true })).rejects.toThrow("Unauthorized");
+    await t.mutation(api.posts.setPinned, { secret, slug: "entry-0", pinned: true });
+    vi.advanceTimersByTime(1000);
+    await t.mutation(api.posts.setPinned, { secret, slug: "entry-5", pinned: true });
+    expect((await t.query(api.posts.pinned, { secret })).map(p => p.slug)).toEqual(["entry-5", "entry-0"]);
+    const list = await t.query(api.posts.list, { secret, paginationOpts: { numItems: 30, cursor: null } });
+    expect(list.posts.map(p => p.slug)).toEqual(Array.from({ length: 12 }, (_, i) => `entry-${11 - i}`));
+    await t.mutation(api.posts.setPinned, { secret, slug: "entry-5", pinned: false });
+    expect((await t.query(api.posts.pinned, { secret })).map(p => p.slug)).toEqual(["entry-0"]);
+    for (let i = 1; i < 10; i++) { vi.advanceTimersByTime(1000); await t.mutation(api.posts.setPinned, { secret, slug: `entry-${i}`, pinned: true }); }
+    await expect(t.mutation(api.posts.setPinned, { secret, slug: "entry-11", pinned: true })).rejects.toThrow("up to 10");
+    // Re-pinning an already pinned entry is not blocked by the cap.
+    await t.mutation(api.posts.setPinned, { secret, slug: "entry-0", pinned: true });
+  } finally { vi.useRealTimers(); }
 });

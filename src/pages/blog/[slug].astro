@@ -1,7 +1,7 @@
 ---
 import Layout from "../../components/Layout.astro";
 import Window from "../../components/Window.astro";
-import { Heart, Globe, Lock, LogOut } from "@lucide/astro";
+import { Heart, Globe, Lock, LogOut, Pin, PinOff } from "@lucide/astro";
 import { api, database } from "../../utils/database";
 import { authenticated } from "../../utils/auth";
 import sanitize from "sanitize-html";
@@ -29,6 +29,7 @@ const jsonLd = post?.isPublic ? { "@context": "https://schema.org", "@type": "Bl
       <i class="spacer"></i>
       {post && <>
         <button type="button" class="with-icon like" id="like-button" data-slug={post.slug} aria-pressed="false"><Heart size={13} /><span data-like-label>Like</span></button>
+        {admin && <button type="button" class="with-icon" id="pin-button" data-slug={post.slug} data-pinned={String(!!post.pinnedAt)}>{post.pinnedAt ? <PinOff size={13} /> : <Pin size={13} />}{post.pinnedAt ? "Unpin" : "Pin to Top"}</button>}
         {admin && <button type="button" class="with-icon" id="visibility-button" data-slug={post.slug} data-public={String(!!post.isPublic)}>{post.isPublic ? <Lock size={13} /> : <Globe size={13} />}{post.isPublic ? "Make Private" : "Make Public"}</button>}
         {reader && <form action="/api/logout" method="post"><button class="with-icon" type="submit"><LogOut size={13} />Sign out</button></form>}
       </>}
@@ -48,6 +49,7 @@ const jsonLd = post?.isPublic ? { "@context": "https://schema.org", "@type": "Bl
         <span><span data-views>{post.views}</span> views</span>
         <span><span id="like-count">{post.likes}</span> likes</span>
         <span class="spacer"></span>
+        {post.pinnedAt && <span class="placard">Pinned</span>}
         <span class="placard">{post.isPublic ? "Public" : "Private"}</span>
         <span class="status" id="post-status" role="status"></span>
       </> : <a href="/blog">Back to the diary</a>}
@@ -82,6 +84,14 @@ const jsonLd = post?.isPublic ? { "@context": "https://schema.org", "@type": "Bl
       finally { like.disabled = false; }
     });
   }
+  const pin = document.querySelector<HTMLButtonElement>("#pin-button");
+  pin?.addEventListener("click", async () => {
+    pin.disabled = true;
+    try {
+      await send("/api/post-pin", { slug: pin.dataset.slug, pinned: pin.dataset.pinned !== "true" });
+      location.reload();
+    } catch (error) { report(error); pin.disabled = false; }
+  });
   const visibility = document.querySelector<HTMLButtonElement>("#visibility-button");
   visibility?.addEventListener("click", async () => {
     visibility.disabled = true;

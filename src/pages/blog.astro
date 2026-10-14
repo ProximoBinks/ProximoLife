@@ -5,11 +5,20 @@ import PostList from "../components/PostList.astro";
 import { api, database } from "../utils/database";
 import type { FunctionReturnType } from "convex/server";
 let result: FunctionReturnType<typeof api.posts.list> = { posts: [], next: null };
+let pinnedPosts: FunctionReturnType<typeof api.posts.pinned> = [];
 let unavailable = false;
-try { const { client, secret } = database(); result = await client.query(api.posts.list, { secret, paginationOpts: { numItems: 30, cursor: Astro.url.searchParams.get("before") } }); }
-catch { unavailable = true; Astro.response.status = 503; }
-const tags = [...new Set(result.posts.flatMap(p => p.tags))].sort();
-const publicCount = result.posts.filter(p => p.isPublic).length;
+const cursor = Astro.url.searchParams.get("before");
+try {
+  const { client, secret } = database();
+  [result, pinnedPosts] = await Promise.all([client.query(api.posts.list, { secret, paginationOpts: { numItems: 30, cursor } }), client.query(api.posts.pinned, { secret })]);
+} catch { unavailable = true; Astro.response.status = 503; }
+// Pinned entries sit at the top of the first page and are left out of the dated list on every page.
+const pinnedSlugs = new Set(pinnedPosts.map(p => p.slug));
+const pinned = cursor ? [] : pinnedPosts;
+const dated = result.posts.filter(p => !pinnedSlugs.has(p.slug));
+const shown = [...pinned, ...dated];
+const tags = [...new Set(shown.flatMap(p => p.tags))].sort();
+const publicCount = shown.filter(p => p.isPublic).length;
 ---
 <Layout title="proximo – digital diary" description="Every entry in my diary, newest first. I write about coding projects, money, health, learning Japanese and whatever else I’ve been thinking about.">
   <Window title="Digital Diary" heading proxy="/aqua/icons/documentsfolder.png" class="opens" bodyClass="flush">
@@ -17,16 +26,16 @@ const publicCount = result.posts.filter(p => p.isPublic).length;
       <a class="toolbar-item" href="/"><img src="/aqua/icons/finder.png" alt="" width="16" height="16" /><span>Home</span></a>
       <a class="toolbar-item" href="/rss.xml"><img src="/aqua/icons/networkglobe.png" alt="" width="16" height="16" /><span>Subscribe</span></a>
       <i class="spacer"></i>
-      {!unavailable && result.posts.length > 0 && <>
+      {!unavailable && shown.length > 0 && <>
         <span class="tool-field"><label for="tag-filter">Tag</label><span class="select-wrapper"><select id="tag-filter"><option value="">All</option>{tags.map(tag => <option value={tag}>{tag}</option>)}</select></span></span>
         <span class="tool-field"><label for="search" class="sr-only">Search entries</label><input id="search" type="search" placeholder="Search" autocomplete="off" /></span>
       </>}
     </div>
     {unavailable ? <div class="list-empty" role="status"><h2>The diary couldn’t be loaded.</h2><p>Try loading the page again in a moment. <a href="/blog">Try again</a></p></div>
-      : result.posts.length === 0 ? <div class="list-empty"><h2>No entries here yet.</h2><p>There are no posts on this page.</p></div>
-      : <PostList posts={result.posts} filterable />}
+      : shown.length === 0 ? <div class="list-empty"><h2>No entries here yet.</h2><p>There are no posts on this page.</p></div>
+      : <PostList posts={dated} pinned={pinned} filterable />}
     <Fragment slot="status">
-      <span id="filter-status" role="status">{result.posts.length} items, {publicCount} public</span>
+      <span id="filter-status" role="status">{shown.length} items, {publicCount} public</span>
       <span class="spacer"></span>
       {Astro.url.searchParams.has("before") && <a href="/blog">Latest entries</a>}
       {result.next && <a href={`/blog?before=${encodeURIComponent(result.next)}`}>Older entries</a>}
@@ -45,6 +54,11 @@ const publicCount = result.posts.filter(p => p.isPublic).length;
       const tags: string[] = JSON.parse(row.dataset.tags ?? "[]");
       row.hidden = (!!tag?.value && !tags.includes(tag.value)) || (!!term && !row.dataset.title?.includes(term));
       if (!row.hidden) shown++;
+    });
+    // A group header only shows while at least one of its entries does.
+    document.querySelectorAll<HTMLElement>("tbody[data-group]").forEach(group => {
+      const header = group.querySelector<HTMLElement>(".group-row");
+      if (header) header.hidden = !group.querySelector("tr[data-tags]:not([hidden])");
     });
     if (status) status.textContent = !tag?.value && !term ? initial : shown ? `${shown} ${shown === 1 ? "item" : "items"} match` : "No entries match";
   };
