@@ -12,7 +12,7 @@ export const POST: APIRoute = async (context) => {
     const recipient = import.meta.env.CONTACT_EMAIL;
     if (!token || !recipient) return json({ error: "Email is temporarily unavailable. Please try again later." }, 503);
     const transporter = nodemailer.createTransport({ host: "smtp.postmarkapp.com", port: 587, secure: false, requireTLS: true, auth: { user: token, pass: token }, connectionTimeout: 10000, socketTimeout: 15000 });
-    await transporter.sendMail({ from: recipient, to: recipient, replyTo: email, subject: "New message from proximo.life", text: `From: ${name} <${email}>\n\n${message}` });
+    await transporter.sendMail({ from: recipient, to: recipient, replyTo: email, subject: "New message from proximo", text: `From: ${name} <${email}>\n\n${message}` });
     return json({ success: true });
   } catch { return json({ error: "Your message could not be sent. Please try again." }, 503); }
 };
