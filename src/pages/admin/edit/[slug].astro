@@ -1,0 +1,72 @@
+---
+import Layout from "../../../components/Layout.astro";
+import Window from "../../../components/Window.astro";
+import { LogOut, Trash2 } from "@lucide/astro";
+import { authenticated } from "../../../utils/auth";
+import { api, database } from "../../../utils/database";
+import { entryVersion } from "../../../utils/entry";
+import type { FunctionReturnType } from "convex/server";
+const slug = Astro.params.slug ?? "";
+if (!authenticated(Astro.cookies, "admin")) return Astro.redirect(`/login?returnTo=${encodeURIComponent(`/admin/edit/${slug}`)}`, 302);
+let post: FunctionReturnType<typeof api.posts.get> = null;
+let unavailable = false;
+try { const { client, secret } = database(); post = await client.query(api.posts.get, { secret, slug }); }
+catch { unavailable = true; }
+if (unavailable) Astro.response.status = 503;
+else if (!post) Astro.response.status = 404;
+const date = post && new Date(post.created_at).toLocaleDateString("en-CA", { timeZone: "Australia/Adelaide" });
+---
+<Layout title={post ? `proximo – editing ${post.title}` : "proximo – edit entry"} noindex>
+  <Window title={post ? `Editing “${post.title}”` : "Edit Entry"} heading proxy="/aqua/icons/rtf.png" class="opens">
+    <div class="toolbar small" slot="toolbar">
+      <a class="toolbar-item" href={post ? `/blog/${post.slug}` : "/blog"}><img src="/aqua/icons/rtf.png" alt="" width="16" height="16" /><span>{post ? "Back to Entry" : "Diary"}</span></a>
+      <i class="spacer"></i>
+      <form action="/api/logout" method="post"><button class="with-icon" type="submit"><LogOut size={13} />Sign out</button></form>
+    </div>
+    {!post ? <p>{unavailable ? "This entry couldn’t be loaded. Try again in a moment." : "There’s no entry at this address."} <a href="/blog">Back to the diary</a></p> : <>
+      <form id="edit-post-form" class="form-grid" action="/api/edit-post" method="post" data-json-form data-post-form>
+        <input type="hidden" name="version" value={entryVersion(post)} />
+        <label for="title">Title</label><input id="title" name="title" type="text" maxlength="200" value={post.title} required />
+        <label for="slug">URL</label><div><input id="slug" name="slug" type="text" value={post.slug} readonly aria-describedby="slug-help" /><small id="slug-help">{Astro.url.host}/blog/{post.slug} · fixed after publishing so links keep working</small></div>
+        <label for="author">Author</label><input id="author" name="author" type="text" maxlength="100" value={post.author} required />
+        <label for="date">Date</label><div><input id="date" name="date" type="date" value={date} required aria-describedby="date-help" /><small id="date-help">Shown in Adelaide time. Entries are listed newest first.</small></div>
+        <label for="tags">Tags</label><div><input id="tags" name="tags" type="text" value={post.tags.join(", ")} placeholder="e.g. coding, life" aria-describedby="tags-help" /><small id="tags-help">Separate with commas. Up to 20 tags, 40 characters each.</small></div>
+        <label for="content" class="top">Post content</label><div><textarea id="content" name="content" rows="18" maxlength="100000" aria-describedby="content-help" required>{post.content}</textarea><small id="content-help">Plain text, or HTML for paragraphs, headings, and links.</small></div>
+        <span></span><div class="field-row"><input id="private" name="private" type="checkbox" checked={!post.isPublic} /><label for="private">Private – readers need the diary password</label></div>
+        <div class="span buttons-row"><button type="button" class="with-icon" id="delete-button"><Trash2 size={13} />Delete Entry</button><p class="status" role="status" data-status style="flex:1"></p><a class="push" href={`/blog/${post.slug}`}>Cancel</a><button type="submit" class="default">Save Changes</button></div>
+      </form>
+      <dialog class="aqua-dialog" id="delete-dialog" aria-labelledby="delete-title">
+        <section class="window">
+          <div class="window-body flush">
+            <div class="aqua-alert">
+              <div class="icon"><img src="/aqua/icons/alertcaution.png" alt="" width="64" height="64" /></div>
+              <div class="body">
+                <h2 class="message" id="delete-title">Delete “{post.title}”?</h2>
+                <p class="informative">This can’t be undone. Its views and likes are deleted too, and its link will stop working.</p>
+                <p class="status error" id="delete-status" role="status"></p>
+                <div class="buttons"><button type="button" id="confirm-delete" data-slug={post.slug}>Delete</button><button type="button" class="default" id="cancel-delete" autofocus>Cancel</button></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </dialog>
+    </>}
+  </Window>
+</Layout>
+<script>
+  import "../../../scripts/forms";
+  const dialog = document.querySelector<HTMLDialogElement>("#delete-dialog");
+  const confirm = document.querySelector<HTMLButtonElement>("#confirm-delete");
+  const status = document.getElementById("delete-status");
+  document.querySelector("#delete-button")?.addEventListener("click", () => dialog?.showModal());
+  document.querySelector("#cancel-delete")?.addEventListener("click", () => dialog?.close());
+  confirm?.addEventListener("click", async () => {
+    confirm.disabled = true;
+    try {
+      const response = await fetch("/api/delete-post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: confirm.dataset.slug }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Couldn’t delete this entry. Please try again.");
+      location.assign("/blog");
+    } catch (error) { if (status) status.textContent = error instanceof Error ? error.message : "Couldn’t delete this entry."; confirm.disabled = false; }
+  });
+</script>

@@ -12,7 +12,7 @@ if (!authenticated(Astro.cookies, "admin")) return Astro.redirect("/login?return
       <i class="spacer"></i>
       <form action="/api/logout" method="post"><button class="with-icon" type="submit"><LogOut size={13} />Sign out</button></form>
     </div>
-    <form id="new-post-form" class="form-grid" action="/api/new-post" method="post" data-json-form>
+    <form id="new-post-form" class="form-grid" action="/api/new-post" method="post" data-json-form data-post-form>
       <label for="title">Title</label><input id="title" name="title" type="text" maxlength="200" required />
       <label for="slug">URL slug</label><div><input id="slug" name="slug" type="text" maxlength="200" pattern="[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="slug-help" required /><small id="slug-help">{Astro.url.host}/blog/<span id="slug-preview">…</span></small></div>
       <label for="author">Author</label><input id="author" name="author" type="text" maxlength="100" autocomplete="name" value="proximo" required />

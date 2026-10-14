@@ -71,6 +71,34 @@ export const setPinned = mutation({ args: { secret: v.string(), slug: v.string()
   await ctx.db.patch(post._id, { pinnedAt: pinned ? Date.now() : undefined });
   return pinned;
 }});
+// Admin edits from the website. The slug is fixed after publishing so links keep working.
+// `expected` is what the editor loaded; a mismatch means someone else changed the entry since.
+export const update = mutation({
+  args: {
+    secret: v.string(), slug: v.string(),
+    expected: v.object({ title: v.string(), content: v.string(), created_at: v.string() }),
+    title: v.string(), content: v.string(), author: v.string(), tags: v.array(v.string()), created_at: v.string(), isPublic: v.boolean(),
+  },
+  handler: async (ctx, { secret, slug, expected, ...changes }) => {
+    authorize(secret);
+    if (!Number.isFinite(Date.parse(changes.created_at)) || new Date(changes.created_at).toISOString() !== changes.created_at) throw new ConvexError("Invalid date");
+    const post = await ctx.db.query("posts").withIndex("by_slug", q => q.eq("slug", slug)).unique();
+    if (!post) throw new ConvexError("Post not found");
+    if (post.title !== expected.title || post.content !== expected.content || post.created_at !== expected.created_at) throw new ConvexError("This entry changed after you opened it. Reload the page to see the latest version, then make your edits again.");
+    validate({ ...changes, slug });
+    await ctx.db.patch(post._id, changes);
+    return slug;
+  },
+});
+export const remove = mutation({ args: { secret: v.string(), slug: v.string() }, handler: async (ctx, { secret, slug }) => {
+  authorize(secret);
+  const post = await ctx.db.query("posts").withIndex("by_slug", q => q.eq("slug", slug)).unique();
+  if (!post) throw new ConvexError("Post not found");
+  // Likes and views belong to the entry, so they go with it.
+  for (const interaction of await ctx.db.query("interactions").withIndex("by_visitor", q => q.eq("postId", post._id)).collect()) await ctx.db.delete(interaction._id);
+  await ctx.db.delete(post._id);
+  return slug;
+}});
 export const rateLimit = mutation({ args: { secret: v.string(), key: v.string(), maximum: v.number(), windowMs: v.number() }, handler: async (ctx, { secret, key, maximum, windowMs }) => {
   authorize(secret);
   const now = Date.now();

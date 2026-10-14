@@ -22,5 +22,5 @@ export function login(cookies: AstroCookies, role: Role, secure: boolean) {
   cookies.set("proximo_session", `${value}.${sign(value)}`, { path: "/", httpOnly: true, secure, sameSite: "lax", maxAge: 86400 });
 }
 export function safeReturn(value: string) {
-  return /^\/(?:blog(?:\/[a-z0-9-]+)?|admin\/new-post)$/.test(value) ? value : "/blog";
+  return /^\/(?:blog(?:\/[a-z0-9-]+)?|admin\/new-post|admin\/edit\/[a-z0-9-]+)$/.test(value) ? value : "/blog";
 }

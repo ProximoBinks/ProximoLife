@@ -116,3 +116,25 @@ test("pinned entries come back most recently pinned first, capped, while list st
     await t.mutation(api.posts.setPinned, { secret, slug: "entry-0", pinned: true });
   } finally { vi.useRealTimers(); }
 });
+
+test("admin edits keep the slug, refuse stale or invalid changes, and delete removes interactions", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(api.posts.create, { secret, ...post, isPublic: false });
+  const original = (await t.query(api.posts.get, { secret, slug: post.slug }))!;
+  const expected = { title: original.title, content: original.content, created_at: original.created_at };
+  const edit = { title: "A clearer thought", content: "<p>Edited words</p>", author: "proximo", tags: ["life", "notes"], created_at: "2025-03-01T02:00:00.000Z", isPublic: true };
+  await expect(t.mutation(api.posts.update, { secret: "wrong", slug: post.slug, expected, ...edit })).rejects.toThrow("Unauthorized");
+  await expect(t.mutation(api.posts.update, { secret, slug: post.slug, expected, ...edit, created_at: "1 March" })).rejects.toThrow("Invalid date");
+  await expect(t.mutation(api.posts.update, { secret, slug: post.slug, expected, ...edit, title: " " })).rejects.toThrow("Invalid post");
+  await t.mutation(api.posts.update, { secret, slug: post.slug, expected, ...edit });
+  expect(await t.query(api.posts.get, { secret, slug: post.slug })).toMatchObject({ ...edit, slug: post.slug, likes: 0, views: 0 });
+  // The editor still holds the old text, so a second save must not overwrite the first.
+  await expect(t.mutation(api.posts.update, { secret, slug: post.slug, expected, ...edit, title: "Overwrite" })).rejects.toThrow("changed after you opened it");
+  const visitor = "33333333-3333-3333-3333-333333333333";
+  await t.mutation(api.posts.interact, { secret, slug: post.slug, visitor, kind: "like", reader: false });
+  await expect(t.mutation(api.posts.remove, { secret: "wrong", slug: post.slug })).rejects.toThrow("Unauthorized");
+  await t.mutation(api.posts.remove, { secret, slug: post.slug });
+  expect(await t.query(api.posts.get, { secret, slug: post.slug })).toBeNull();
+  expect(await t.run(ctx => ctx.db.query("interactions").collect())).toEqual([]);
+  await expect(t.mutation(api.posts.remove, { secret, slug: post.slug })).rejects.toThrow("Post not found");
+});
